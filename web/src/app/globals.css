@@ -47,7 +47,7 @@
 }
 
 body {
-    font-family: var(--font-sans), sans-serif;
+    font-family: var(--font-nunito-sans), sans-serif;
 }
 
 :root {
@@ -58,7 +58,7 @@ body {
     --card-foreground: oklch(0.193 0.035 263.3);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.193 0.035 263.3);
-    --primary: oklch(0.597 0.202 260.1);
+    --primary: #3F8CFF;
     --primary-foreground: oklch(1 0 0);
     --secondary: oklch(0.971 0.008 241.7);
     --secondary-foreground: oklch(0.193 0.035 263.3);
@@ -123,6 +123,7 @@ body {
     * {
         @apply border-border outline-ring/50;
     }
+
     body {
         @apply bg-background text-foreground;
     }
