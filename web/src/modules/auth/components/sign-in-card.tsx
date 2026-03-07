@@ -150,7 +150,7 @@ export const SignInCard = () => {
 
                     <div className="text-center pt-4">
                         <Link
-                            href="/signup"
+                            href="/signup/step-1"
                             className="text-primary font-semibold hover:underline decoration-2 underline-offset-4"
                         >
                             Don&apos;t have an account?
