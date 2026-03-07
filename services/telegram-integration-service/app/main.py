@@ -48,7 +48,7 @@ def get_verification_service(request: Request) -> VerificationService:
     return request.app.state.verification_service
 
 
-@app.get("/healthz")
+@app.get("/health", status_code=status.HTTP_200_OK)
 async def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
 

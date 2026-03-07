@@ -27,16 +27,37 @@ Dedicated Python microservice for CRM Workroom Telegram workflows. The first imp
 pip install -e .
 ```
 
-3. Copy `.env.example` to `.env` and fill in real values.
+3. Copy `.env.example` to `.env` and fill in real values. Keep the real bot token only in `.env`.
 4. Run the app:
 
 ```bash
 uvicorn app.main:app --reload --port 8081
 ```
 
+## Docker Run
+
+From the repository root:
+
+```bash
+docker compose up --build telegram-integration-service
+```
+
+This starts the service on port `8081` together with Redis.
+It reads secrets from `services/telegram-integration-service/.env`.
+
+## Docker Dev Run
+
+For local development with hot reload:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build telegram-integration-service
+```
+
+This uses `Dockerfile.dev`, mounts `services/telegram-integration-service` into the container, and runs `uvicorn --reload` without reinstalling Python dependencies on each start.
+
 ## Internal Endpoints
 
-* `GET /healthz`
+* `GET /health`
 * `POST /internal/verifications/intents`
 * `POST /internal/verifications/check`
 * `POST /webhooks/telegram/{secret}`
