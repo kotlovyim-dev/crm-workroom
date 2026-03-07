@@ -1,4 +1,28 @@
 services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+    volumes:
+      - ./web:/app
+      - web-node-modules:/app/node_modules
+      - web-next:/app/.next
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      WATCHPACK_POLLING: "true"
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile.dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+    volumes:
+      - ./services/auth-service:/app
+    environment:
+      APP_ENV: development
+
   telegram-integration-service:
     build:
       context: ./services/telegram-integration-service
@@ -8,3 +32,8 @@ services:
       - ./services/telegram-integration-service:/app
     environment:
       APP_ENV: development
+      TELEGRAM_DELIVERY_MODE: polling
+
+volumes:
+  web-node-modules:
+  web-next:

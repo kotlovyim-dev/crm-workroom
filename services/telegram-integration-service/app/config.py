@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     telegram_bot_token: str
     telegram_bot_username: str = "workroom_verification_bot"
+    telegram_delivery_mode: Literal["webhook", "polling"] = "webhook"
     telegram_webhook_secret: str
     verification_ttl_seconds: int = 300
 

@@ -39,21 +39,22 @@ uvicorn app.main:app --reload --port 8081
 From the repository root:
 
 ```bash
-docker compose up --build telegram-integration-service
+docker compose up --build web auth-service telegram-integration-service
 ```
 
-This starts the service on port `8081` together with Redis.
-It reads secrets from `services/telegram-integration-service/.env`.
+This starts the full local stack, including the Telegram service on port `8081` together with Redis, Auth, PostgreSQL, and the Next.js frontend.
+Telegram-related secrets can be passed as shell environment variables before `docker compose up`.
 
 ## Docker Dev Run
 
 For local development with hot reload:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build telegram-integration-service
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-This uses `Dockerfile.dev`, mounts `services/telegram-integration-service` into the container, and runs `uvicorn --reload` without reinstalling Python dependencies on each start.
+This uses `Dockerfile.dev`, mounts the service source into the container, and runs `uvicorn --reload` without reinstalling Python dependencies on each start.
+In dev mode the bot runs through Telegram long polling, so it can answer directly in chat without a public webhook URL.
 
 ## Internal Endpoints
 

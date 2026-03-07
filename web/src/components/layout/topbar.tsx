@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
     BellIcon,
     ChevronDownIcon,
@@ -24,6 +25,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLogoutMutation, useSessionQuery } from "@/modules/auth/api/auth";
 
 const NOTIFICATIONS = [
     {
@@ -50,7 +52,18 @@ const NOTIFICATIONS = [
 ];
 
 export function Topbar() {
+    const router = useRouter();
     const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
+    const { data } = useSessionQuery();
+    const logoutMutation = useLogoutMutation();
+
+    const initials = data?.user?.email.slice(0, 2).toUpperCase() ?? "CW";
+
+    const handleLogout = async () => {
+        await logoutMutation.mutateAsync();
+        router.replace("/login");
+        router.refresh();
+    };
 
     return (
         <header className="flex items-center justify-between gap-4 w-full px-1 pt-6">
@@ -135,10 +148,10 @@ export function Topbar() {
                                     src="/avatar.png"
                                     alt="User avatar"
                                 />
-                                <AvatarFallback>IP</AvatarFallback>
+                                <AvatarFallback>{initials}</AvatarFallback>
                             </Avatar>
                             <span className="text-sm font-medium">
-                                Ivan Petrenko
+                                {data?.user?.email ?? "Workspace User"}
                             </span>
                             <ChevronDownIcon className="size-4 text-muted-foreground" />
                         </Button>
@@ -155,9 +168,9 @@ export function Topbar() {
                             Settings
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive">
+                        <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                             <LogOutIcon className="size-4" />
-                            Sign out
+                            {logoutMutation.isPending ? "Signing out..." : "Sign out"}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

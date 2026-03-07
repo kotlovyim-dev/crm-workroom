@@ -3,6 +3,8 @@
 import { startTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
+import { useRegisterWorkspaceMutation } from "@/modules/auth/api/auth"
+import { getApiErrorMessage } from "@/modules/auth/api/client"
 import { OnboardingShell } from "@/modules/auth/components/onboarding-shell"
 import { StepFourForm } from "@/modules/auth/components/steps/step-four-form"
 import { StepOneForm } from "@/modules/auth/components/steps/step-one-form"
@@ -27,6 +29,8 @@ export function SignUpFlow({ step }: SignUpFlowProps) {
     const completedStep = useOnboardingStore((state) => state.completedStep)
     const completeStep = useOnboardingStore((state) => state.completeStep)
     const setCurrentStep = useOnboardingStore((state) => state.setCurrentStep)
+    const draft = useOnboardingStore((state) => state.draft)
+    const registerWorkspaceMutation = useRegisterWorkspaceMutation()
 
     useEffect(() => {
         const allowedStep = Math.min(completedStep + 1, TOTAL_SIGN_UP_STEPS) as SignUpStep
@@ -66,11 +70,23 @@ export function SignUpFlow({ step }: SignUpFlowProps) {
         goToStep(4)
     }
 
-    const handleStepFourComplete = (values: SignUpStepFourValues) => {
+    const handleStepFourComplete = async (values: SignUpStepFourValues) => {
+        const invitedMembers = values.invited_members.map((item) => item.trim()).filter(Boolean)
+        const nextDraft = {
+            ...draft,
+            invited_members: invitedMembers,
+        }
+
         completeStep(4, {
             invited_members: values.invited_members.map((item) => item.trim()).filter(Boolean),
         })
-        goToSuccess()
+
+        try {
+            await registerWorkspaceMutation.mutateAsync(nextDraft)
+            goToSuccess()
+        } catch (error) {
+            window.alert(getApiErrorMessage(error, "Could not complete workspace registration."))
+        }
     }
 
     if (step === 1) {
@@ -113,6 +129,8 @@ export function SignUpFlow({ step }: SignUpFlowProps) {
             title="Invite Team Members"
             formId="signup-step-4-form"
             onPrevious={() => goToStep(3)}
+            isSubmitting={registerWorkspaceMutation.isPending}
+            nextLabel={registerWorkspaceMutation.isPending ? "Creating workspace..." : "Next Step"}
         >
             <StepFourForm formId="signup-step-4-form" onComplete={handleStepFourComplete} />
         </OnboardingShell>

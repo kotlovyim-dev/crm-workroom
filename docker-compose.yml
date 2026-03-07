@@ -1,18 +1,89 @@
 services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    container_name: crm-web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      PORT: 3000
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+asyncpg://crm:crm@auth-postgres:5432/crm_auth
+      FRONTEND_URL: http://localhost:3000
+      TELEGRAM_SERVICE_URL: http://telegram-integration-service:8081
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me}
+      ACCESS_TOKEN_TTL_SECONDS: 900
+      REFRESH_TOKEN_TTL_SECONDS: 2592000
+      COOKIE_SECURE: "false"
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      telegram-integration-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
   telegram-integration-service:
     build:
       context: ./services/telegram-integration-service
+      dockerfile: Dockerfile
     container_name: telegram-integration-service
     env_file:
       - ./services/telegram-integration-service/.env
     environment:
+      APP_ENV: production
       REDIS_URL: redis://telegram-integration-redis:6379/0
+      VERIFICATION_TTL_SECONDS: 300
     depends_on:
       telegram-integration-redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "8081:8081"
     restart: unless-stopped
+
+  auth-postgres:
+    image: postgres:16-alpine
+    container_name: auth-postgres
+    environment:
+      POSTGRES_DB: crm_auth
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
 
   telegram-integration-redis:
     image: redis:7-alpine
@@ -25,3 +96,9 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+    volumes:
+      - telegram-redis-data:/data
+
+volumes:
+  auth-postgres-data:
+  telegram-redis-data:

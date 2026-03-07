@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { ArrowRight, Eye, EyeOff } from "lucide-react"
 
+import { useLoginMutation } from "@/modules/auth/api/auth"
+import { getApiErrorMessage } from "@/modules/auth/api/client"
 import { Button } from "@/components/ui/button"
 import {
     Form,
@@ -28,7 +31,9 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>
 
 export const SignInCard = () => {
+    const router = useRouter()
     const [showPassword, setShowPassword] = useState(false)
+    const loginMutation = useLoginMutation()
 
     const form = useForm<SignInFormValues>({
         resolver: zodResolver(signInSchema),
@@ -39,8 +44,19 @@ export const SignInCard = () => {
         },
     })
 
-    function onSubmit(data: SignInFormValues) {
-        alert(JSON.stringify(data, null, 2))
+    async function onSubmit(data: SignInFormValues) {
+        try {
+            await loginMutation.mutateAsync({
+                email: data.email,
+                password: data.password,
+            })
+
+            router.push("/dashboard")
+        } catch (error) {
+            form.setError("root", {
+                message: getApiErrorMessage(error, "Could not sign in with the provided credentials."),
+            })
+        }
     }
 
     return (
@@ -138,12 +154,17 @@ export const SignInCard = () => {
                         </Link>
                     </div>
 
+                    {form.formState.errors.root ? (
+                        <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
+                    ) : null}
+
                     <div className="pt-6 pb-2">
                         <Button
                             type="submit"
+                            disabled={loginMutation.isPending}
                             className="h-12 w-full rounded-xl font-bold shadow-md cursor-pointer" 
                         >
-                            Sign In
+                            {loginMutation.isPending ? "Signing In..." : "Sign In"}
                             <ArrowRight className="size-5" />
                         </Button>
                     </div>
