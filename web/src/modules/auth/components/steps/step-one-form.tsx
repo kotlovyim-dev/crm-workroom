@@ -24,7 +24,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    useInitTelegramVerificationMutation,
+    useVerifyTelegramCodeMutation,
+} from "@/modules/auth/api/auth"
+import { getApiErrorMessage } from "@/modules/auth/api/client"
 import { useVerificationCountdown } from "@/modules/auth/hooks/use-verification-countdown"
+import { formatPhoneNumber } from "@/modules/auth/lib/onboarding"
 import {
     signUpStepOneSchema,
     type SignUpStepOneValues,
@@ -43,8 +49,10 @@ export function StepOneForm({ formId, onComplete }: StepOneFormProps) {
     const draft = useOnboardingStore((state) => state.draft)
     const telegramBotUrl = useOnboardingStore((state) => state.telegramBotUrl)
     const verificationExpiresAt = useOnboardingStore((state) => state.verificationExpiresAt)
-    const requestTelegramVerification = useOnboardingStore((state) => state.requestTelegramVerification)
+    const setTelegramVerification = useOnboardingStore((state) => state.setTelegramVerification)
     const { formattedTimeLeft, hasActiveCode } = useVerificationCountdown(verificationExpiresAt)
+    const initVerificationMutation = useInitTelegramVerificationMutation()
+    const verifyTelegramCodeMutation = useVerifyTelegramCodeMutation()
 
     const form = useForm<SignUpStepOneValues>({
         resolver: zodResolver(signUpStepOneSchema),
@@ -65,12 +73,53 @@ export function StepOneForm({ formId, onComplete }: StepOneFormProps) {
         }
 
         const { country_code, phone_number } = form.getValues()
-        requestTelegramVerification(country_code, phone_number)
+        const normalizedPhone = formatPhoneNumber(country_code, phone_number)
+
+        try {
+            const response = await initVerificationMutation.mutateAsync({
+                phone_number: normalizedPhone,
+            })
+
+            setTelegramVerification({
+                countryCode: country_code,
+                phoneNumber: phone_number,
+                botUrl: response.bot_url,
+                expiresAt: response.expires_at,
+            })
+        } catch (error) {
+            form.setError("phone_number", {
+                message: getApiErrorMessage(error, "Could not generate the Telegram verification link."),
+            })
+        }
     }
+
+    const handleSubmit = form.handleSubmit(async (values) => {
+        const normalizedPhone = formatPhoneNumber(values.country_code, values.phone_number)
+
+        try {
+            const verification = await verifyTelegramCodeMutation.mutateAsync({
+                phone_number: normalizedPhone,
+                code: values.telegram_code,
+            })
+
+            if (!verification.verified) {
+                form.setError("telegram_code", {
+                    message: `Telegram verification failed: ${verification.status}.`,
+                })
+                return
+            }
+
+            onComplete(values)
+        } catch (error) {
+            form.setError("telegram_code", {
+                message: getApiErrorMessage(error, "Could not verify the Telegram code."),
+            })
+        }
+    })
 
     return (
         <Form {...form}>
-            <form id={formId} onSubmit={form.handleSubmit(onComplete)} className="space-y-5 lg:space-y-4">
+            <form id={formId} onSubmit={handleSubmit} className="space-y-5 lg:space-y-4">
                 <div className="space-y-2">
                     <FormLabel className="text-sm font-bold text-muted-foreground">Mobile Number</FormLabel>
                     <div className="grid grid-cols-[7rem_minmax(0,1fr)] items-start gap-3">
@@ -162,9 +211,10 @@ export function StepOneForm({ formId, onComplete }: StepOneFormProps) {
                                     type="button"
                                     variant="link"
                                     onClick={handleOpenTelegramBot}
+                                    disabled={initVerificationMutation.isPending}
                                     className="h-auto px-0 text-sm font-bold text-primary"
                                 >
-                                    Generate Telegram link
+                                    {initVerificationMutation.isPending ? "Generating link..." : "Generate Telegram link"}
                                 </Button>
 
                                 {telegramBotUrl ? (

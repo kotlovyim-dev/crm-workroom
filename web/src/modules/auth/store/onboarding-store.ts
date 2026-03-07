@@ -1,9 +1,7 @@
 import { create } from "zustand"
 
 import {
-    buildTelegramBotUrl,
     DEFAULT_ONBOARDING_DRAFT,
-    formatPhoneNumber,
 } from "@/modules/auth/lib/onboarding"
 import type { OnboardingDraft, SignUpStep } from "@/modules/auth/types/onboarding"
 
@@ -16,7 +14,12 @@ type OnboardingStore = {
     setCurrentStep: (step: SignUpStep) => void
     updateDraft: (values: Partial<OnboardingDraft>) => void
     completeStep: (step: SignUpStep, values: Partial<OnboardingDraft>) => void
-    requestTelegramVerification: (countryCode: string, phoneNumber: string) => void
+    setTelegramVerification: (payload: {
+        countryCode: string
+        phoneNumber: string
+        botUrl: string
+        expiresAt: string
+    }) => void
     reset: () => void
 }
 
@@ -43,17 +46,15 @@ export const useOnboardingStore = create<OnboardingStore>((set) => ({
             currentStep: step,
             completedStep: Math.max(state.completedStep, step),
         })),
-    requestTelegramVerification: (countryCode, phoneNumber) => {
-        const fullPhoneNumber = formatPhoneNumber(countryCode, phoneNumber)
-
+    setTelegramVerification: ({ countryCode, phoneNumber, botUrl, expiresAt }) => {
         set((state) => ({
             draft: {
                 ...state.draft,
                 country_code: countryCode,
                 phone_number: phoneNumber,
             },
-            telegramBotUrl: buildTelegramBotUrl(fullPhoneNumber),
-            verificationExpiresAt: Date.now() + 5 * 60_000,
+            telegramBotUrl: botUrl,
+            verificationExpiresAt: new Date(expiresAt).getTime(),
         }))
     },
     reset: () =>
