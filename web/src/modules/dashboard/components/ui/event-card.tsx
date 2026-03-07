@@ -50,7 +50,7 @@ export function EventCard({ event }: EventCardProps) {
                     <span className="text-foreground font-bold text-base">{event.title}</span>
                 </div>
                 {event.trend && (
-                    <div className="flex-shrink-0 ml-4 pt-1">
+                    <div className="shrink-0 ml-4 pt-1">
                         {event.trend === "up" ? (
                             <ArrowUp className="w-5 h-5 text-amber-500 stroke-2" />
                         ) : (
