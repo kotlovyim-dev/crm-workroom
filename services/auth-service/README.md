@@ -26,3 +26,29 @@ uvicorn app.main:app --reload --port 8080
 ```
 
 The default database is SQLite for local development. Set `DATABASE_URL` to a PostgreSQL URL when infrastructure is ready.
+
+## Docker Run
+
+From the repository root:
+
+```bash
+docker compose up --build web auth-service telegram-integration-service
+```
+
+This starts:
+
+* `web` on `http://localhost:3000`
+* `auth-service` on `http://localhost:8080`
+* `telegram-integration-service` on `http://localhost:8081`
+* PostgreSQL for Auth on `localhost:5432`
+* Redis for Telegram verification on `localhost:6379`
+
+The Compose stack wires Auth to PostgreSQL and the Telegram service automatically.
+
+## Docker Dev Run
+
+For hot reload across frontend and Python services:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```

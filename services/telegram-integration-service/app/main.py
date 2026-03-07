@@ -1,3 +1,5 @@
+import asyncio
+import contextlib
 from contextlib import asynccontextmanager
 
 from aiogram import Bot
@@ -33,10 +35,20 @@ async def lifespan(app: FastAPI):
     app.state.bot = bot
     app.state.dispatcher = dispatcher
     app.state.verification_service = verification_service
+    app.state.polling_task = None
+
+    if settings.telegram_delivery_mode == "polling":
+        await bot.delete_webhook(drop_pending_updates=True)
+        app.state.polling_task = asyncio.create_task(dispatcher.start_polling(bot))
 
     try:
         yield
     finally:
+        polling_task = app.state.polling_task
+        if polling_task is not None:
+            polling_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await polling_task
         await bot.session.close()
         await redis.aclose()
 
