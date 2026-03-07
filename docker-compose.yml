@@ -1,0 +1,27 @@
+services:
+  telegram-integration-service:
+    build:
+      context: ./services/telegram-integration-service
+    container_name: telegram-integration-service
+    env_file:
+      - ./services/telegram-integration-service/.env
+    environment:
+      REDIS_URL: redis://telegram-integration-redis:6379/0
+    depends_on:
+      telegram-integration-redis:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  telegram-integration-redis:
+    image: redis:7-alpine
+    container_name: telegram-integration-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
