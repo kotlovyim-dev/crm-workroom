@@ -61,7 +61,8 @@ export function Topbar() {
 
     const handleLogout = async () => {
         await logoutMutation.mutateAsync();
-        router.push("/login");
+        router.replace("/login");
+        router.refresh();
     };
 
     return (

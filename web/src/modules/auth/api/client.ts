@@ -24,7 +24,8 @@ authApiClient.interceptors.response.use(
             originalRequest._retry ||
             requestUrl.includes("/api/v1/auth/refresh") ||
             requestUrl.includes("/api/v1/auth/login") ||
-            requestUrl.includes("/api/v1/auth/register-workspace")
+            requestUrl.includes("/api/v1/auth/register-workspace") ||
+            requestUrl.includes("/api/v1/auth/logout")
         ) {
             return Promise.reject(error)
         }

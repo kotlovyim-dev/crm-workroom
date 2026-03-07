@@ -183,6 +183,19 @@ class AuthService:
         refresh_session.revoked_at = datetime.now(UTC)
         await session.commit()
 
+    async def validate_active_session(
+        self,
+        session: AsyncSession,
+        refresh_token: str | None,
+        user_id: str,
+    ) -> None:
+        if not refresh_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+        refresh_session = await self._get_valid_refresh_session(session, refresh_token)
+        if refresh_session.user_id != user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session is invalid")
+
     def build_access_token(self, user: User) -> str:
         return create_access_token(settings=self._settings, subject=user.id, workspace_id=user.workspace_id)
 

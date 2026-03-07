@@ -46,9 +46,12 @@ def get_auth_service(settings: Settings = Depends(get_settings)) -> AuthService:
 
 async def get_current_user_id(
     access_token: str | None = Cookie(default=None, alias="access_token"),
+    refresh_token: str | None = Cookie(default=None, alias="refresh_token"),
     settings: Settings = Depends(get_settings),
+    session: AsyncSession = Depends(get_db_session),
+    auth_service: AuthService = Depends(get_auth_service),
 ) -> str:
-    if not access_token:
+    if not access_token or not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     try:
@@ -59,6 +62,8 @@ async def get_current_user_id(
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
+
+    await auth_service.validate_active_session(session, refresh_token, user_id)
 
     return user_id
 
@@ -167,11 +172,11 @@ async def refresh_session(
 
 @app.post("/api/v1/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-    response: Response,
     refresh_token: str | None = Cookie(default=None, alias="refresh_token"),
     session: AsyncSession = Depends(get_db_session),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> Response:
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
     await auth_service.logout(session, refresh_token)
     clear_auth_cookies(response, auth_service)
     return response
