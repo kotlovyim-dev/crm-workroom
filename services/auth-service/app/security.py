@@ -53,8 +53,9 @@ def decode_access_token(token: str, settings: Settings) -> dict[str, Any]:
     return jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
 
 
-def create_refresh_token() -> str:
-    return secrets.token_urlsafe(48)
+def create_refresh_token(*, remember_me: bool = True) -> str:
+    prefix = "rm." if remember_me else "sm."
+    return f"{prefix}{secrets.token_urlsafe(48)}"
 
 
 def hash_refresh_token(token: str) -> str:
