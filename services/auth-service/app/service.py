@@ -50,8 +50,14 @@ class AuthService:
 
     async def init_telegram_verification(
         self,
+        session: AsyncSession,
         payload: InitTelegramVerificationRequest,
     ) -> InitTelegramVerificationResponse:
+        normalized_phone = normalize_phone(payload.phone_number)
+        existing_user = await session.scalar(select(User).where(User.phone_number == normalized_phone))
+        if existing_user is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone number already exists")
+
         verification = await self._telegram_client.create_intent(
             payload=self._build_intent_request(payload.phone_number)
         )

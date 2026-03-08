@@ -34,6 +34,7 @@ services:
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+asyncpg://crm:crm@auth-postgres:5432/crm_auth
+      TELEGRAM_SERVICE_URL: http://telegram-integration-service:8081
 
     depends_on:
       - auth-postgres
