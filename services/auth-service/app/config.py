@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     database_url: str = "sqlite+aiosqlite:///./auth.db"
     frontend_url: str = "http://localhost:3000"
-    telegram_service_url: str = "http://localhost:8081"
+    telegram_service_url: str = "http://localhost:8000"
     jwt_secret_key: str = "change-me"
     access_token_ttl_seconds: int = 900
     refresh_token_ttl_seconds: int = 2_592_000
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    @field_validator("frontend_url", "telegram_service_url")
+    @field_validator("frontend_url", "telegram_service_url")    
     @classmethod
     def strip_trailing_slash(cls, value: str) -> str:
         return value.rstrip("/")

@@ -4,16 +4,28 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
     container_name: crm-web
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
       PORT: 3000
     depends_on:
       auth-service:
         condition: service_healthy
     ports:
       - "3000:3000"
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      auth-service:
+        condition: service_healthy
     restart: unless-stopped
 
   auth-service:
@@ -40,8 +52,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "8080:8080"
     restart: unless-stopped
 
   telegram-integration-service:
