@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { GuestGuard } from "@/modules/auth/components/guest-guard"
 import { SignUpFlow } from "@/modules/auth/components/signup-flow"
 import { parseSignUpStepSlug } from "@/modules/auth/lib/onboarding"
 
@@ -23,5 +24,9 @@ export default async function SignupStepPage({ params }: SignupStepPageProps) {
         notFound()
     }
 
-    return <SignUpFlow step={parsedStep} />
+    return (
+        <GuestGuard>
+            <SignUpFlow step={parsedStep} />
+        </GuestGuard>
+    )
 }

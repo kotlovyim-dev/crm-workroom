@@ -49,6 +49,7 @@ export const SignInCard = () => {
             await loginMutation.mutateAsync({
                 email: data.email,
                 password: data.password,
+                remember_me: data.rememberMe,
             })
 
             router.push("/dashboard")
@@ -162,7 +163,7 @@ export const SignInCard = () => {
                         <Button
                             type="submit"
                             disabled={loginMutation.isPending}
-                            className="h-12 w-full rounded-xl font-bold shadow-md cursor-pointer" 
+                            className="h-12 w-full rounded-xl font-bold shadow-md cursor-pointer"
                         >
                             {loginMutation.isPending ? "Signing In..." : "Sign In"}
                             <ArrowRight className="size-5" />

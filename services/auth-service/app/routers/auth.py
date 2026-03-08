@@ -52,6 +52,10 @@ async def get_current_user_id(
 
 def set_auth_cookies(response: Response, auth_service: AuthService, access_token: str, refresh_token: str) -> None:
     cookie_settings = auth_service.cookie_settings()
+    
+    is_persistent = not refresh_token.startswith("sm.")
+    refresh_max_age = settings.refresh_token_ttl_seconds if is_persistent else None
+
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -61,7 +65,7 @@ def set_auth_cookies(response: Response, auth_service: AuthService, access_token
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        max_age=settings.refresh_token_ttl_seconds,
+        max_age=refresh_max_age,
         **cookie_settings,
     )
 
@@ -84,7 +88,7 @@ async def login(
     user_record = await session.get(User, auth_response.user.id)
     if user_record is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    refresh_token = await auth_service.create_refresh_session(session, user_record, request)
+    refresh_token = await auth_service.create_refresh_session(session, user_record, request, payload.remember_me)
     access_token = auth_service.build_access_token(user_record)
     set_auth_cookies(response, auth_service, access_token, refresh_token)
     return auth_response

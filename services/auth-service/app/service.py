@@ -124,8 +124,9 @@ class AuthService:
         session: AsyncSession,
         user: User,
         request: Request,
+        remember_me: bool = True,
     ) -> str:
-        raw_token = create_refresh_token()
+        raw_token = create_refresh_token(remember_me=remember_me)
         token_hash = hash_refresh_token(raw_token)
         refresh_session = RefreshSession(
             user_id=user.id,
@@ -145,7 +146,9 @@ class AuthService:
         request: Request,
     ) -> tuple[AuthResponse, str]:
         refresh_session = await self._get_valid_refresh_session(session, refresh_token)
-        new_token = create_refresh_token()
+        
+        is_persistent = not refresh_token.startswith("sm.")
+        new_token = create_refresh_token(remember_me=is_persistent)
         refresh_session.rotation_counter += 1
         refresh_session.last_used_at = datetime.now(UTC)
         refresh_session.token_hash = hash_refresh_token(new_token)

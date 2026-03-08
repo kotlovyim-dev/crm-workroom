@@ -1,4 +1,4 @@
-import { AuthLayout } from "@/modules/auth/components/auth-layout"
+import { LoginLayout } from "@/modules/auth/components/login-layout"
 import { SignInCard } from "@/modules/auth/components/sign-in-card"
 
 export const metadata = {
@@ -8,8 +8,8 @@ export const metadata = {
 
 export default function LoginPage() {
     return (
-        <AuthLayout>
+        <LoginLayout>
             <SignInCard />
-        </AuthLayout>
+        </LoginLayout>
     )
 }
