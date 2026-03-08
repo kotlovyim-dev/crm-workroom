@@ -89,50 +89,48 @@ export function SignUpFlow({ step }: SignUpFlowProps) {
         }
     }
 
-    if (step === 1) {
-        return (
-            <OnboardingShell currentStep={1} title="Valid your phone" formId="signup-step-1-form">
-                <StepOneForm formId="signup-step-1-form" onComplete={handleStepOneComplete} />
-            </OnboardingShell>
-        )
-    }
+    switch (step) {
+        case 1:
+            return (
+                <OnboardingShell currentStep={1} title="Valid your phone" formId="signup-step-1-form">
+                    <StepOneForm formId="signup-step-1-form" onComplete={handleStepOneComplete} />
+                </OnboardingShell>
+            )
 
-    if (step === 2) {
-        return (
-            <OnboardingShell
-                currentStep={2}
-                title="Tell about yourself"
-                formId="signup-step-2-form"
-                onPrevious={() => goToStep(1)}
-            >
-                <StepTwoForm formId="signup-step-2-form" onComplete={handleStepTwoComplete} />
-            </OnboardingShell>
-        )
+        case 2:
+            return (
+                <OnboardingShell
+                    currentStep={2}
+                    title="Tell about yourself"
+                    formId="signup-step-2-form"
+                    onPrevious={() => goToStep(1)}
+                >
+                    <StepTwoForm formId="signup-step-2-form" onComplete={handleStepTwoComplete} />
+                </OnboardingShell>
+            )
+        case 3: {
+            return (
+                <OnboardingShell
+                    currentStep={3}
+                    title="Tell about your company"
+                    formId="signup-step-3-form"
+                    onPrevious={() => goToStep(2)}
+                >
+                    <StepThreeForm formId="signup-step-3-form" onComplete={handleStepThreeComplete} />
+                </OnboardingShell>
+            )
+        } case 4:
+            return (
+                <OnboardingShell
+                    currentStep={4}
+                    title="Invite Team Members"
+                    formId="signup-step-4-form"
+                    onPrevious={() => goToStep(3)}
+                    isSubmitting={registerWorkspaceMutation.isPending}
+                    nextLabel={registerWorkspaceMutation.isPending ? "Creating workspace..." : "Next Step"}
+                >
+                    <StepFourForm formId="signup-step-4-form" onComplete={handleStepFourComplete} />
+                </OnboardingShell>
+            )
     }
-
-    if (step === 3) {
-        return (
-            <OnboardingShell
-                currentStep={3}
-                title="Tell about your company"
-                formId="signup-step-3-form"
-                onPrevious={() => goToStep(2)}
-            >
-                <StepThreeForm formId="signup-step-3-form" onComplete={handleStepThreeComplete} />
-            </OnboardingShell>
-        )
-    }
-
-    return (
-        <OnboardingShell
-            currentStep={4}
-            title="Invite Team Members"
-            formId="signup-step-4-form"
-            onPrevious={() => goToStep(3)}
-            isSubmitting={registerWorkspaceMutation.isPending}
-            nextLabel={registerWorkspaceMutation.isPending ? "Creating workspace..." : "Next Step"}
-        >
-            <StepFourForm formId="signup-step-4-form" onComplete={handleStepFourComplete} />
-        </OnboardingShell>
-    )
 }
