@@ -100,9 +100,10 @@ async def login(
 )
 async def init_telegram_verification(
     payload: InitTelegramVerificationRequest,
+    session: AsyncSession = Depends(get_db_session),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> InitTelegramVerificationResponse:
-    return await auth_service.init_telegram_verification(payload)
+    return await auth_service.init_telegram_verification(session, payload)
 
 
 @router.post("/verify-telegram-code", response_model=VerifyTelegramCodeResponse)
