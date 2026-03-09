@@ -50,6 +50,8 @@ services:
       APP_ENV: development
       TELEGRAM_DELIVERY_MODE: polling
       REDIS_URL: redis://telegram-integration-redis:6379
+    extra_hosts:
+      - "api.telegram.org:149.154.166.110"
     depends_on:
       - telegram-integration-redis
 
