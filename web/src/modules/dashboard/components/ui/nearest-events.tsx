@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { NearEventCard } from "./near-event-card";
 import { ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const events = [
     {
@@ -35,9 +36,11 @@ export function NearestEvents() {
         <Card className="w-full h-full">
             <CardHeader className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Nearest Events</h2>
-                <Button variant="link" size="sm">
-                    View All <ChevronRightIcon className="size-5" />
-                </Button>
+                <Link href="/dashboard/nearest-events">
+                    <Button variant="link" size="sm">
+                        View All <ChevronRightIcon className="size-5" />
+                    </Button>
+                </Link>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
                 {events.slice(0, 4).map((event, index) => (
