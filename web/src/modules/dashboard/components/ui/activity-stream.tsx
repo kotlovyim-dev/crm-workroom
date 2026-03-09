@@ -33,7 +33,7 @@ const actionIconIconMap: Record<ActionType, LucideIcon> = {
 const actionColorMap: Record<ActionType, string> = {
     "attached": "text-purple-500",
     "updated": "text-primary",
-    "deleted": "text-red-500",
+    "deleted": "text-destructive",
 }
 
 export function ActivityStream({ activities }: ActivityStreamProps) {
