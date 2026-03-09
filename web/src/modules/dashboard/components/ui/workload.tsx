@@ -23,21 +23,21 @@ const workloadData = [
         position: "Copywriter",
         level: "Middle",
         activeTasks: 20,
-        totalTasks: 20, // 100%
+        totalTasks: 20,
     },
     {
         name: "Louis Castor",
         position: "Copywriter",
         level: "Senior",
         activeTasks: 32,
-        totalTasks: 32, // 100%
+        totalTasks: 32,
     },
     {
         name: "Blake Silva",
         position: "iOS Developer",
         level: "Senior",
         activeTasks: 12,
-        totalTasks: 30, // 40%
+        totalTasks: 30,
     },
     {
         name: "Joel Phillips",
