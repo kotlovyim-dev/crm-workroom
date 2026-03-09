@@ -66,6 +66,16 @@ const PROJECTS = [
                 position: "Product Manager",
                 level: "Middle",
             },
+            {
+                name: "John Doe",
+                position: "Software Engineer",
+                level: "Senior",
+            },
+            {
+                name: "John Doe",
+                position: "Software Engineer",
+                level: "Senior",
+            }
         ]
 
     }

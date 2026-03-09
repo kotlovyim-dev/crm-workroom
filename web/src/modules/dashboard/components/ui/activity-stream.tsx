@@ -37,13 +37,15 @@ const actionColorMap: Record<ActionType, string> = {
 }
 
 export function ActivityStream({ activities }: ActivityStreamProps) {
+    const visibleActivities = activities.slice(0, 3);
+
     return (
-        <Card className="w-1/3 gap-0 pb-0" >
-            <CardHeader className="py-0">
+        <Card className="flex flex-col w-full h-full gap-0 pb-4" >
+            <CardHeader className="py-0 shrink-0">
                 <h2 className="text-2xl font-bold">Activity Stream</h2>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-                {activities.map((activity, index) => (
+            <CardContent className="flex flex-col gap-3 mt-4 flex-1 overflow-y-auto pr-2">
+                {visibleActivities.map((activity, index) => (
                     <div key={index} className="flex flex-col gap-3">
                         <div className="flex flex-row items-center gap-2">
                             <Avatar className="size-12">
@@ -66,10 +68,12 @@ export function ActivityStream({ activities }: ActivityStreamProps) {
 
                     </div>
                 ))}
+            </CardContent>
+            <div className="shrink-0 flex justify-center pt-2">
                 <Button variant="link" size="sm">
                     View All <ChevronRightIcon className="size-5" />
                 </Button>
-            </CardContent>
+            </div>
         </Card>
     );
 }
