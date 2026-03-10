@@ -6,44 +6,60 @@ import { EmployeeCard } from "./employee-card";
 
 const workloadData = [
     {
-        name: "John Doe",
-        position: "Software Engineer",
-        level: "Senior",
-    },
-    {
-        name: "Jane Smith",
-        position: "Product Manager",
+        name: "Shawn Stone",
+        position: "UI/UX Designer",
         level: "Middle",
+        activeTasks: 18,
+        totalTasks: 24,
     },
     {
-        name: "Alice Johnson",
-        position: "UX Designer",
+        name: "Randy Delgado",
+        position: "UI/UX Designer",
         level: "Junior",
+        activeTasks: 10,
+        totalTasks: 35,
     },
     {
-        name: "Bob Brown",
-        position: "QA Engineer",
+        name: "Emily Tyler",
+        position: "Copywriter",
         level: "Middle",
+        activeTasks: 20,
+        totalTasks: 20, // 100%
     },
     {
-        name: "Charlie Davis",
-        position: "DevOps Engineer",
+        name: "Louis Castor",
+        position: "Copywriter",
         level: "Senior",
+        activeTasks: 32,
+        totalTasks: 32, // 100%
     },
     {
-        name: "Eve Wilson",
-        position: "Data Scientist",
+        name: "Blake Silva",
+        position: "iOS Developer",
+        level: "Senior",
+        activeTasks: 12,
+        totalTasks: 30, // 40%
+    },
+    {
+        name: "Joel Phillips",
+        position: "UI/UX Designer",
         level: "Middle",
+        activeTasks: 35,
+        totalTasks: 40,
     },
     {
-        name: "Frank Miller",
-        position: "Technical Writer",
+        name: "Wayne Marsh",
+        position: "Copywriter",
         level: "Junior",
+        activeTasks: 5,
+        totalTasks: 20,
     },
     {
-        name: "Grace Lee",
-        position: "HR Specialist",
+        name: "Oscar Holloway",
+        position: "UI/UX Designer",
         level: "Middle",
+        activeTasks: 25,
+        totalTasks: 28,
     },
 ];
 
@@ -67,6 +83,8 @@ export function Workload() {
                             name={employee.name}
                             position={employee.position}
                             level={employee.level}
+                            activeTasks={employee.activeTasks}
+                            totalTasks={employee.totalTasks}
                         />
                     </div>
                 ))}
