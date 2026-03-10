@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { MessageCircleIcon } from "lucide-react";
+import { SupportModal } from "@/modules/dashboard/components/ui/support-modal";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -36,7 +37,9 @@ export function Sidebar() {
                     </div>
                     <div className="w-full p-4 bg-background rounded-lg flex flex-col items-center gap-4">
                         <Image src="/illustration.svg" alt="Logo" width={140} height={124} />
-                        <Button className="w-full"><MessageCircleIcon />Support</Button>
+                        <SupportModal>
+                            <Button className="w-full"><MessageCircleIcon />Support</Button>
+                        </SupportModal>
                     </div>
                 </div>
 

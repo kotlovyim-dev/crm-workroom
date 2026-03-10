@@ -29,7 +29,47 @@ const activityStreamData: Activity[] = [
             type: "updated",
             description: "Updated the status of Mind Map task to In Progress",
         }],
-    }
+    },
+    {
+        author: {
+            name: "Jane Smith",
+            position: "Product Manager",
+        },
+        actions: [{
+            type: "updated",
+            description: "Updated the status of Mind Map task to In Progress",
+        }],
+    },
+    {
+        author: {
+            name: "Jane Smith",
+            position: "Product Manager",
+        },
+        actions: [{
+            type: "updated",
+            description: "Updated the status of Mind Map task to In Progress",
+        }],
+    },
+    {
+        author: {
+            name: "Jane Smith",
+            position: "Product Manager",
+        },
+        actions: [{
+            type: "updated",
+            description: "Updated the status of Mind Map task to In Progress",
+        }],
+    },
+    {
+        author: {
+            name: "Jane Smith",
+            position: "Product Manager",
+        },
+        actions: [{
+            type: "updated",
+            description: "Updated the status of Mind Map task to In Progress",
+        }],
+    },
 ]
 
 export function DashboardView() {
@@ -44,9 +84,15 @@ export function DashboardView() {
                     <NearestEvents />
                 </div>
             </div>
-            <div className="flex flex-row gap-6">
-                <ProjectsContainer />
-                <ActivityStream activities={activityStreamData} />
+            <div className="flex flex-row gap-6 items-stretch">
+                <div className="flex-1 min-w-0">
+                    <ProjectsContainer />
+                </div>
+                <div className="w-1/4 relative shrink-0">
+                    <div className="absolute inset-0 h-full">
+                        <ActivityStream activities={activityStreamData} />
+                    </div>
+                </div>
             </div>
         </div>
     );

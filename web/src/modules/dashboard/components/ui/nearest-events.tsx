@@ -24,11 +24,17 @@ const events = [
         duration: "4h",
         type: "presentation" as const,
     },
+    {
+        name: "Project Review",
+        time: "Today | 2:00 PM",
+        duration: "4h",
+        type: "presentation" as const,
+    },
 ];
 
 export function NearestEvents() {
     return (
-        <Card className="w-1/3">
+        <Card className="w-full h-full">
             <CardHeader className="flex items-center justify-between">
                 <DashboardSectionHeader
                     title="Nearest Events"

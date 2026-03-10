@@ -104,9 +104,8 @@ export function Topbar() {
                             {NOTIFICATIONS.map((notification) => (
                                 <li
                                     key={notification.id}
-                                    className={`flex flex-col gap-1 px-4 py-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
-                                        !notification.read ? "bg-primary/5" : ""
-                                    }`}
+                                    className={`flex flex-col gap-1 px-4 py-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${!notification.read ? "bg-primary/5" : ""
+                                        }`}
                                 >
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-sm font-medium leading-tight">
@@ -144,10 +143,6 @@ export function Topbar() {
                             className="flex items-center gap-2 px-3 bg-card border shadow-xs"
                         >
                             <Avatar size="sm">
-                                <AvatarImage
-                                    src="/avatar.png"
-                                    alt="User avatar"
-                                />
                                 <AvatarFallback>{initials}</AvatarFallback>
                             </Avatar>
                             <span className="text-sm font-medium">

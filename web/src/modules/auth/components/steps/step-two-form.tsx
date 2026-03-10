@@ -11,6 +11,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
+import { Label } from "@/components/ui/label"
 import {
     RadioGroup,
     RadioGroupItem,
@@ -116,14 +117,14 @@ export function StepTwoForm({ formId, onComplete }: StepTwoFormProps) {
                                     onValueChange={(value) => field.onChange(value === "yes")}
                                     className="flex items-center gap-8"
                                 >
-                                    <label className="flex items-center gap-3 text-xl text-foreground">
+                                    <Label className="flex items-center gap-3 text-xl font-normal text-foreground cursor-pointer">
                                         <RadioGroupItem value="yes" className="size-5" />
                                         <span>Yes</span>
-                                    </label>
-                                    <label className="flex items-center gap-3 text-xl text-foreground">
+                                    </Label>
+                                    <Label className="flex items-center gap-3 text-xl font-normal text-foreground cursor-pointer">
                                         <RadioGroupItem value="no" className="size-5" />
                                         <span>No</span>
-                                    </label>
+                                    </Label>
                                 </RadioGroup>
                             </FormControl>
                             <FormMessage className="sm:basis-full" />

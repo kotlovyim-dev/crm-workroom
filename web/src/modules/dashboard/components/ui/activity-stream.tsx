@@ -38,6 +38,8 @@ const actionColorMap: Record<ActionType, string> = {
 }
 
 export function ActivityStream({ activities }: ActivityStreamProps) {
+    const visibleActivities = activities.slice(0, 3);
+
     return (
         <Card className="flex flex-col w-full h-full gap-0 pb-4" >
             <CardHeader className="py-0 shrink-0">
@@ -67,10 +69,12 @@ export function ActivityStream({ activities }: ActivityStreamProps) {
 
                     </div>
                 ))}
+            </CardContent>
+            <div className="shrink-0 flex justify-center pt-2">
                 <Button variant="link" size="sm">
                     View All <ChevronRightIcon className="size-5" />
                 </Button>
-            </CardContent>
+            </div>
         </Card>
     );
 }
