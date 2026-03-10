@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRightIcon } from "lucide-react";
+import { DashboardSectionHeader } from "./dashboard-section-header";
 import { ProjectCard } from "./project-card";
 
 const PROJECTS = [
@@ -74,12 +75,14 @@ const PROJECTS = [
 export function ProjectsContainer() {
     return (
         <div className="w-full flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Projects</h2>
-                <Button variant="link" size="sm">
-                    View All <ChevronRightIcon className="size-5" />
-                </Button>
-            </div>
+            <DashboardSectionHeader
+                title="Projects"
+                action={
+                    <Button variant="link" size="sm">
+                        View All <ChevronRightIcon className="size-5" />
+                    </Button>
+                }
+            />
             <div className="flex flex-col gap-4">
                 {PROJECTS.slice(0, 3).map((project) => (
                     <ProjectCard

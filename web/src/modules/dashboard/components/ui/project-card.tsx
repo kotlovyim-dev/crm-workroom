@@ -1,5 +1,5 @@
-import { Card } from "@/components/ui/card";
-import { ArrowDownIcon, CalendarIcon } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowDownIcon } from "lucide-react";
 import Image from "next/image";
 
 interface ProjectCardProps {
@@ -62,10 +62,23 @@ export function ProjectCard({ id, icon, name, createdAt, priority, all_tasks, ac
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Assignees</p>
-                        <p className="font-bold text-lg">{assignees.length}</p>
+                        <div className="flex -space-x-2 mt-1">
+                            {assignees.slice(0, 3).map((assignee) => (
+                                <Avatar key={`${assignee.name}-${assignee.position}`} className="w-8 h-8 border-2 border-background">
+                                    <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
+                                        {assignee.name.substring(0, 2)}
+                                    </AvatarFallback>
+                                </Avatar>
+                            ))}
+                            {assignees.length > 3 && (
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-bold border-2 border-background z-10 relative">
+                                    +{assignees.length - 3}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </Card >
         </div >
     );
-}   
+}

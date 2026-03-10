@@ -1,18 +1,21 @@
-import Image from "next/image"
 import { GuestGuard } from "@/modules/auth/components/guest-guard"
+import { AuthLogoMark } from "@/modules/auth/components/auth-logo-mark"
+import { AuthViewport } from "@/modules/auth/components/auth-viewport"
+import Image from "next/image"
 
 export const LoginLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <GuestGuard>
-            <div className="h-screen relative flex items-center justify-center bg-secondary p-4 lg:p-8">
+            <AuthViewport className="relative flex items-center justify-center p-4 lg:p-8">
                 <div className="flex w-full max-w-7xl h-auto min-h-[770px] bg-card rounded-3xl shadow-xl overflow-hidden flex-col md:flex-row">
 
                     <div className="hidden md:flex flex-col flex-1 max-w-2xl bg-primary p-10 lg:p-16 relative overflow-hidden">
 
                         <div className="flex items-center gap-3 mb-16 z-10">
-                            <div className="flex bg-card rounded-xl p-2 w-12 h-12 justify-center items-center">
-                                <Image src="/logo.svg" alt="Woorkroom Logo" width={32} height={32} />
-                            </div>
+                            <AuthLogoMark
+                                size={32}
+                                className="flex bg-card rounded-xl p-2 w-12 h-12 justify-center items-center"
+                            />
                             <span className="text-primary-foreground text-3xl font-bold tracking-tight">Woorkroom</span>
                         </div>
 
@@ -44,7 +47,7 @@ export const LoginLayout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                 </div>
-            </div>
+            </AuthViewport>
         </GuestGuard>
     )
 }
