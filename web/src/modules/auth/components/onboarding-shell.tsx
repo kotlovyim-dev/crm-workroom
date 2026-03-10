@@ -1,6 +1,7 @@
-import Image from "next/image"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
+import { AuthLogoMark } from "@/modules/auth/components/auth-logo-mark"
+import { AuthViewport } from "@/modules/auth/components/auth-viewport"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -27,11 +28,11 @@ export function OnboardingShell({
     isSubmitting = false,
 }: OnboardingShellProps) {
     return (
-        <div className="h-screen overflow-hidden bg-secondary px-4 py-4 lg:px-5 lg:py-5">
+        <AuthViewport>
             <div className="mx-auto flex h-full w-full max-w-7xl flex-col gap-4 lg:grid lg:h-[calc(100vh-2.5rem)] lg:grid-cols-[21.5rem_minmax(0,1fr)]">
                 <aside className="h-full hidden md:block rounded-3xl bg-primary px-8 py-8 text-primary-foreground lg:px-9 lg:py-10">
-                    <div className="mb-10 flex size-14 items-center justify-center rounded-xl bg-card p-0 text-card-foreground lg:mb-12">
-                        <Image src="/logo.svg" alt="Woorkroom logo" width={48} height={48} priority />
+                    <div className="mb-10 lg:mb-12">
+                        <AuthLogoMark priority />
                     </div>
 
                     <div className="mb-8 space-y-3 lg:mb-10">
@@ -87,6 +88,6 @@ export function OnboardingShell({
                     </div>
                 </Card>
             </div>
-        </div>
+        </AuthViewport>
     )
 }

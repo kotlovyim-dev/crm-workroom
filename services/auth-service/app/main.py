@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.database import Base, engine
 from app.routers import auth, health
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as connection:
@@ -14,16 +15,21 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Auth Service", version="0.1.0", lifespan=lifespan)
-settings = get_settings()
+def create_app() -> FastAPI:
+    app = FastAPI(title="Auth Service", version="0.1.0", lifespan=lifespan)
+    settings = get_settings()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[settings.frontend_url],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[settings.frontend_url],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-app.include_router(health.router, prefix="/health", tags=["health"])
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+    app.include_router(health.router, prefix="/health", tags=["health"])
+    app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+    return app
+
+
+app = create_app()

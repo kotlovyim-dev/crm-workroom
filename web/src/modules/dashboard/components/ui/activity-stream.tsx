@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DashboardSectionHeader } from "@/modules/dashboard/components/ui/dashboard-section-header";
 import { cn } from "@/lib/utils";
 import { ChevronRightIcon, CloudUpload, LucideIcon, PaperclipIcon, TrashIcon } from "lucide-react";
 
@@ -42,11 +43,11 @@ export function ActivityStream({ activities }: ActivityStreamProps) {
     return (
         <Card className="flex flex-col w-full h-full gap-0 pb-4" >
             <CardHeader className="py-0 shrink-0">
-                <h2 className="text-2xl font-bold">Activity Stream</h2>
+                <DashboardSectionHeader title="Activity Stream" />
             </CardHeader>
             <CardContent className="flex flex-col gap-3 mt-4 flex-1 overflow-y-auto pr-2">
-                {visibleActivities.map((activity, index) => (
-                    <div key={index} className="flex flex-col gap-3">
+                {visibleActivities.map((activity) => (
+                    <div key={`${activity.author.name}-${activity.author.position}`} className="flex flex-col gap-3">
                         <div className="flex flex-row items-center gap-2">
                             <Avatar className="size-12">
                                 <AvatarFallback>{activity.author.name.charAt(0)}</AvatarFallback>
@@ -57,12 +58,12 @@ export function ActivityStream({ activities }: ActivityStreamProps) {
                             </div>
                         </div>
                         <div className="flex flex-col gap-3">
-                            {activity.actions.map((action, index) => {
+                            {activity.actions.map((action) => {
                                 const Icon = actionIconIconMap[action.type];
-                                return <div key={index} className="flex flex-row gap-2 p-4 bg-background rounded-lg">
+                                return <div key={`${action.type}-${action.description}`} className="flex flex-row gap-2 p-4 bg-background rounded-lg">
                                     <Icon className={cn(actionColorMap[action.type], "size-6 shrink-0")} />
                                     <span>{action.description}</span>
-                                </div>
+                                </div>;
                             })}
                         </div>
 

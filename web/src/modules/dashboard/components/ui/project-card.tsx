@@ -1,6 +1,5 @@
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowDownIcon, CalendarIcon } from "lucide-react";
+import { ArrowDownIcon } from "lucide-react";
 import Image from "next/image";
 
 interface ProjectCardProps {
@@ -88,4 +87,4 @@ export function ProjectCard({ id, icon, name, createdAt, priority, all_tasks, ac
             </div>
         </div>
     );
-}   
+}
