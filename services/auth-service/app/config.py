@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     service_name: str = "auth-service"
     app_env: str = "development"
-    database_url: str = "sqlite+aiosqlite:///./auth.db"
+    database_url: str
     frontend_url: str = "http://localhost:3000"
     telegram_service_url: str = "http://localhost:8000"
     jwt_secret_key: str = "change-me"
