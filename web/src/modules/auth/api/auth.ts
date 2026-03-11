@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { queryKeys } from "@/lib/query-keys"
 import { toOnboardingPayload } from "@/modules/auth/lib/onboarding"
 import type { OnboardingDraft } from "@/modules/auth/types/onboarding"
 
@@ -16,7 +17,7 @@ import type {
     VerifyTelegramCodeResponse,
 } from "@/modules/auth/types/auth"
 
-const SESSION_QUERY_KEY = ["auth", "session"]
+const SESSION_QUERY_KEY = queryKeys.auth.session()
 
 export async function login(payload: LoginPayload) {
     const response = await authApiClient.post<AuthResponse>("/api/v1/auth/login", payload)
