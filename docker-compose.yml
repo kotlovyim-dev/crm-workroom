@@ -33,9 +33,11 @@ services:
       context: ./services/auth-service
       dockerfile: Dockerfile
     container_name: auth-service
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8080"
+    env_file:
+      - ./services/auth-service/.env
     environment:
       APP_ENV: production
-      DATABASE_URL: postgresql+asyncpg://crm:crm@auth-postgres:5432/crm_auth
       FRONTEND_URL: http://localhost:3000
       TELEGRAM_SERVICE_URL: http://telegram-integration-service:8081
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me}
@@ -43,8 +45,6 @@ services:
       REFRESH_TOKEN_TTL_SECONDS: 2592000
       COOKIE_SECURE: "false"
     depends_on:
-      auth-postgres:
-        condition: service_healthy
       telegram-integration-service:
         condition: service_healthy
     healthcheck:
@@ -77,24 +77,6 @@ services:
       - "8081:8081"
     restart: unless-stopped
 
-  auth-postgres:
-    image: postgres:16-alpine
-    container_name: auth-postgres
-    environment:
-      POSTGRES_DB: crm_auth
-      POSTGRES_USER: crm
-      POSTGRES_PASSWORD: crm
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crm -d crm_auth"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
-    volumes:
-      - auth-postgres-data:/var/lib/postgresql/data
-
   telegram-integration-redis:
     image: redis:7-alpine
     container_name: telegram-integration-redis
@@ -110,5 +92,4 @@ services:
       - telegram-redis-data:/data
 
 volumes:
-  auth-postgres-data:
   telegram-redis-data:

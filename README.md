@@ -554,7 +554,6 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 - API gateway: `http://localhost:8000`
 - auth service: `http://localhost:8080`
 - telegram integration service: `http://localhost:8081`
-- auth postgres: `localhost:5432`
 - redis: `localhost:6379`
 
 ### Running services individually
@@ -572,9 +571,9 @@ npm run dev
 ```bash
 cd services/auth-service
 pip install -e .
+alembic upgrade head
 uvicorn app.main:app --reload --port 8080
 ```
-
 #### Telegram Integration Service
 
 ```bash
@@ -598,7 +597,7 @@ Note: the Docker setup points the frontend at the API gateway on port `8000`, wh
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `APP_ENV` | No | `development` | Runtime mode |
-| `DATABASE_URL` | No | `sqlite+aiosqlite:///./auth.db` | Auth database connection |
+| `DATABASE_URL` | Yes | none | Auth PostgreSQL connection, typically Neon |
 | `FRONTEND_URL` | No | `http://localhost:3000` | CORS allow-origin |
 | `TELEGRAM_SERVICE_URL` | No | `http://localhost:8000` | Base URL for Telegram verification service calls |
 | `JWT_SECRET_KEY` | Yes for real usage | `change-me` | JWT signing secret |
