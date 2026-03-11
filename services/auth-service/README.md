@@ -19,13 +19,17 @@ FastAPI microservice for CRM Workroom authentication and workspace onboarding.
 pip install -e .
 ```
 
-3. Run the app:
+3. Apply migrations:
+
+```bash
+alembic upgrade head
+```
+
+4. Run the app:
 
 ```bash
 uvicorn app.main:app --reload --port 8080
 ```
-
-The default database is SQLite for local development. Set `DATABASE_URL` to a PostgreSQL URL when infrastructure is ready.
 
 ## Docker Run
 
@@ -40,10 +44,7 @@ This starts:
 * `web` on `http://localhost:3000`
 * `auth-service` on `http://localhost:8080`
 * `telegram-integration-service` on `http://localhost:8081`
-* PostgreSQL for Auth on `localhost:5432`
 * Redis for Telegram verification on `localhost:6379`
-
-The Compose stack wires Auth to PostgreSQL and the Telegram service automatically.
 
 ## Docker Dev Run
 
