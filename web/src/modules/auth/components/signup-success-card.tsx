@@ -40,7 +40,7 @@ export function SignupSuccessCard() {
 
                     <Button onClick={handleStart} size="lg" className="mt-6 h-11 rounded-2xl px-6 text-base font-bold shadow-lg lg:h-12">
                         Let&apos;s Start
-                        <ArrowRight className="size-5" />
+                        <ArrowRight className="size-6" />
                     </Button>
                 </div>
             </Card>
