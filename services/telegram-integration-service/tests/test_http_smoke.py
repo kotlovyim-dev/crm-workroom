@@ -1,9 +1,23 @@
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+
+
+def _bootstrap_service_imports() -> None:
+    service_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(service_root))
+
+    for module_name in list(sys.modules):
+        if module_name == "app" or module_name.startswith("app."):
+            del sys.modules[module_name]
+
+
+_bootstrap_service_imports()
 
 from app.config import get_settings
 from app.domain import CheckVerificationCodeResponse, CreateVerificationIntentResponse
