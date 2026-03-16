@@ -33,7 +33,7 @@ CRM Workroom is an internal workspace platform designed around a broad CRM and t
 
 The project combines three sources of truth:
 
-- running code in `web/`, `backend/`, and `services/api-gateway/`
+- running code in `web/` and `backend/`
 
 This README documents both the current implementation and the intended product scope, clearly separating what is already shipped in this repository from what is planned for future implementation.
 
@@ -54,16 +54,12 @@ This README documents both the current implementation and the intended product s
   - Telegram verification initialization and check flow
   - access token and refresh token cookie sessions
   - session refresh, logout, and session lookup
-  - JWT validation endpoint for gateway auth checks
+  - session/cookie validation endpoint for internal checks
 - FastAPI backend telegram feature with:
   - verification intent creation
   - Redis-backed verification session storage
   - Telegram webhook or polling runtime
   - contact-share validation flow and verification code checking
-- Nginx API Gateway (optional legacy) with:
-  - reverse proxying
-  - auth validation hook for protected routes
-  - rate limiting
 - Docker Compose setup for local development and production-like local orchestration
 
 ### Defined but not yet implemented as full modules
@@ -146,40 +142,34 @@ CRM Workroom is designed as a unified workspace for internal company operations.
 flowchart TD
   User[Browser User]
   Web[Next.js Frontend]
-  Gateway[Nginx API Gateway]
-  Auth[Auth Service<br/>FastAPI + SQLAlchemy]
-  Tg[Telegram Integration Service<br/>FastAPI + aiogram]
+  Backend[Backend Monolith<br/>FastAPI]
   Pg[(PostgreSQL)]
   Redis[(Redis)]
   Telegram[Telegram Bot API]
 
   User --> Web
-  Web --> Gateway
-  Gateway --> Auth
-  Auth --> Pg
-  Auth --> Tg
-  Tg --> Redis
-  Tg --> Telegram
-  Gateway -->|auth_request| Auth
+  Web --> Backend
+  Backend --> Pg
+  Backend --> Redis
+  Backend --> Telegram
 ```
 
 ### Architectural principles
 
-- Microservice-oriented backend boundary design.
-- API Gateway as the single public backend entry point.
-- Auth Service as the source of truth for users, workspaces, invitations, and sessions.
-- Telegram Integration Service isolated from Auth so Telegram-specific runtime concerns stay outside the core identity domain.
+- Modular monolith backend with feature boundaries.
+- Backend as the single public API entry point.
+- Auth feature as the source of truth for users, workspaces, invitations, and sessions.
+- Telegram verification kept as isolated feature modules inside backend.
 - Frontend structured by business modules rather than by technical layer alone.
-- The repository mixes implemented services with forward-looking product specs for upcoming domains.
+- The repository mixes implemented modules with forward-looking product specs for upcoming domains.
 
 ### Communication model
 
-- Browser to backend: HTTP requests through the API Gateway.
-- Frontend auth requests: proxied to Auth Service via `/api/v1/auth/*`.
-- Gateway auth checks: internal `auth_request` to `/api/v1/auth/validate-token`.
-- Auth to Telegram service: internal HTTP contract for verification intent creation and code validation.
-- Telegram service to Redis: ephemeral verification state with TTL.
-- Telegram service to Telegram Bot API: webhook or long-polling delivery.
+- Browser to backend: direct HTTP requests to FastAPI backend.
+- Frontend auth requests: `/api/v1/auth/*`.
+- Auth to telegram feature: internal HTTP contract for verification intent creation and code validation.
+- Telegram feature to Redis: ephemeral verification state with TTL.
+- Telegram feature to Telegram Bot API: webhook or long-polling delivery.
 
 ## Services
 
@@ -200,67 +190,25 @@ Key technologies:
 - Zustand
 - Axios
 
-### `services/api-gateway/`
+### `backend/`
 
-Nginx-based gateway that exposes the backend on port `8000`.
-
-Responsibilities:
-
-- reverse proxy for auth routes
-- rate limiting
-- authentication validation for non-auth API routes
-- future gateway entry point for additional microservices
-
-Current behavior for non-auth routes:
-
-- the gateway authenticates them first
-- then returns `501 Microservice Not Implemented Yet`
-
-This is an explicit indicator that the gateway is already shaped for future service expansion.
-
-### `services/auth-service/`
-
-FastAPI microservice responsible for authentication and workspace onboarding.
+FastAPI modular monolith that contains auth, telegram verification, and people domains.
 
 Responsibilities:
 
 - login via email and password
-- workspace registration
+- workspace registration and invitations
 - cookie-based access and refresh sessions
-- refresh rotation and logout
-- current-session lookup
-- JWT validation for the gateway
-- onboarding orchestration with Telegram verification
+- Telegram verification intents, checks, and webhook/polling runtime
+- employees, profile, vacations, and calendar APIs
 
 Implementation details:
 
 - FastAPI app with CORS configured for the frontend origin
-- SQLAlchemy models created on startup
-- SQLite default for simple local runs
-- PostgreSQL in Docker Compose
+- SQLAlchemy async engine with PostgreSQL
 - PyJWT for access tokens
-- refresh sessions persisted in the database
-
-### `services/telegram-integration-service/`
-
-Dedicated microservice for Telegram verification flows.
-
-Responsibilities:
-
-- create short-lived verification intents
-- generate bot deep links
-- store verification state in Redis
-- process Telegram updates
-- validate shared Telegram contact against the requested phone number
-- expose code-checking endpoint to Auth Service
-
-Implementation details:
-
-- FastAPI runtime
-- aiogram 3 dispatcher
-- Redis async storage
-- supports both webhook mode and polling mode
-- five-minute verification TTL by default
+- Redis-backed verification state for Telegram
+- aiogram 3 bot runtime for contact verification flow
 
 ## Frontend Application
 
@@ -313,7 +261,7 @@ The auth flow is the most complete vertical slice currently present in the repos
 
 1. User opens `/login`.
 2. Frontend submits credentials to `POST /api/v1/auth/login`.
-3. Auth Service validates credentials and creates refresh session state.
+3. Backend auth feature validates credentials and creates refresh session state.
 4. Response sets `access_token` and `refresh_token` cookies.
 5. Frontend redirects to `/dashboard`.
 
@@ -331,8 +279,8 @@ The frontend stores draft onboarding data in a Zustand store and only allows for
 ### Telegram verification flow
 
 1. Frontend calls `POST /api/v1/auth/init-telegram-verification` with a phone number.
-2. Auth Service calls Telegram Integration Service to create a verification intent.
-3. Telegram Integration Service returns a bot deep link and expiry.
+2. Backend auth feature calls backend telegram feature to create a verification intent.
+3. Backend telegram feature returns a bot deep link and expiry.
 4. User opens the bot and shares their Telegram contact.
 5. Telegram service validates contact ownership and phone match.
 6. Telegram service generates a 6-digit code and stores it in Redis.
@@ -345,7 +293,7 @@ The frontend stores draft onboarding data in a Zustand store and only allows for
 - refresh token stored in httpOnly cookie
 - frontend Axios client retries once after `401` by calling `/api/v1/auth/refresh`
 - logout clears both cookies and revokes the refresh session
-- gateway validation uses cookie-based auth, not bearer tokens from the frontend
+- backend validation uses cookie-based auth, not bearer tokens from the frontend
 
 ## Planned Product Modules
 
@@ -419,7 +367,7 @@ The following product areas are part of the broader intended platform scope.
 
 ### Currently implemented relational models
 
-The Auth Service currently defines these persisted entities:
+The backend auth feature currently defines these persisted entities:
 
 - `workspaces`
   - company name
@@ -451,7 +399,7 @@ The Auth Service currently defines these persisted entities:
 
 ### Currently implemented ephemeral state
 
-The Telegram Integration Service stores short-lived verification state in Redis, including:
+The backend telegram feature stores short-lived verification state in Redis, including:
 
 - intent payload by short token
 - reverse lookup by phone number
@@ -474,9 +422,7 @@ The broader target schema extends beyond the currently implemented auth database
 
 ## API Surface
 
-### Auth Service endpoints
-
-Public through the gateway:
+### Backend auth endpoints
 
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/init-telegram-verification`
@@ -486,23 +432,17 @@ Public through the gateway:
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
 
-Internal or gateway-facing:
+Internal:
 
 - `GET /api/v1/auth/validate-token`
 - `GET /health`
 
-### Telegram Integration Service endpoints
+### Backend telegram endpoints
 
-- `GET /health`
-- `POST /internal/verifications/intents`
-- `POST /internal/verifications/check`
-- `POST /webhooks/telegram/{secret}`
-
-### Gateway behavior
-
-- `/api/v1/auth/*` is proxied to Auth Service.
-- `/api/v1/*` for future non-auth domains is reserved behind auth validation.
-- those non-auth routes currently return `501` until their downstream microservices exist.
+- `GET /api/v1/telegram/health`
+- `POST /api/v1/telegram/internal/verifications/intents`
+- `POST /api/v1/telegram/internal/verifications/check`
+- `POST /api/v1/telegram/webhooks/telegram/{secret}`
 
 ## Project Structure
 
@@ -511,10 +451,8 @@ crm-workroom/
 ├── design/
 │   ├── auth.pen
 │   └── extract_pen.mjs
-├── services/
-│   ├── api-gateway/
-│   ├── auth-service/
-│   └── telegram-integration-service/
+├── backend/
+│   └── app/
 ├── web/
 │   ├── src/app/
 │   ├── src/components/
@@ -522,7 +460,7 @@ crm-workroom/
 │   ├── src/lib/
 │   └── src/modules/
 ├── docker-compose.yml
-└── docker-compose.dev.yml
+└── docker-compose.yml
 ```
 
 ## Getting Started
@@ -534,26 +472,18 @@ crm-workroom/
 - Python 3.12+ if running Python services outside Docker
 - Telegram bot credentials for verification flows
 
-### Fastest way to run the stack
-
-Production-like local stack:
+### Fastest way to run local infra
 
 ```bash
 docker compose up --build
 ```
 
-Development stack with hot reload:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-```
+This starts Redis only.
 
 ### Local endpoints
 
 - frontend: `http://localhost:3000`
-- API gateway: `http://localhost:8000`
-- auth service: `http://localhost:8080`
-- telegram integration service: `http://localhost:8081`
+- backend API: `http://localhost:8000`
 - redis: `localhost:6379`
 
 ### Running services individually
@@ -566,20 +496,12 @@ npm install
 npm run dev
 ```
 
-#### Auth Service
+#### Backend
 
 ```bash
-cd services/auth-service
+cd backend
 pip install -e .
-alembic upgrade head
-uvicorn app.main:app --reload --port 8080
-```
-#### Telegram Integration Service
-
-```bash
-cd services/telegram-integration-service
-pip install -e .
-uvicorn app.main:app --reload --port 8081
+uvicorn app.main:app --reload --port 8000
 ```
 
 ## Environment Variables
@@ -590,32 +512,29 @@ uvicorn app.main:app --reload --port 8081
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | No | `http://localhost:8080` in code, `http://localhost:8000` in Docker | Base URL used by the frontend auth API client |
 
-Note: the Docker setup points the frontend at the API gateway on port `8000`, while the frontend code falls back to `http://localhost:8080` if the variable is not provided.
+Note: the frontend should point to backend on port `8000` for local development.
 
-### Auth Service
+### Backend
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `APP_ENV` | No | `development` | Runtime mode |
 | `DATABASE_URL` | Yes | none | Auth PostgreSQL connection, typically Neon |
 | `FRONTEND_URL` | No | `http://localhost:3000` | CORS allow-origin |
-| `TELEGRAM_SERVICE_URL` | No | `http://localhost:8000` | Base URL for Telegram verification service calls |
+| `TELEGRAM_SERVICE_URL` | No | `http://localhost:8000/api/v1/telegram` | Base URL for Telegram verification calls |
 | `JWT_SECRET_KEY` | Yes for real usage | `change-me` | JWT signing secret |
 | `ACCESS_TOKEN_TTL_SECONDS` | No | `900` | Access token TTL |
 | `REFRESH_TOKEN_TTL_SECONDS` | No | `2592000` | Refresh token TTL |
 | `COOKIE_SECURE` | No | `false` | Secure-cookie flag |
 | `COOKIE_DOMAIN` | No | unset | Cookie domain override |
 
-### Telegram Integration Service
-
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `APP_ENV` | No | `development` | Runtime mode |
 | `REDIS_URL` | No | `redis://localhost:6379/0` | Redis connection |
-| `TELEGRAM_BOT_TOKEN` | Yes | none | Bot token |
+| `TELEGRAM_BOT_TOKEN` | No | unset | Bot token |
 | `TELEGRAM_BOT_USERNAME` | No | `workroom_verification_bot` | Bot username used in deep links |
 | `TELEGRAM_DELIVERY_MODE` | No | `webhook` | `webhook` or `polling` |
-| `TELEGRAM_WEBHOOK_SECRET` | Yes | none | Webhook secret path segment |
+| `TELEGRAM_WEBHOOK_SECRET` | No | unset | Webhook secret path segment |
 | `VERIFICATION_TTL_SECONDS` | No | `300` | Verification TTL |
 
 ## Development Workflow
@@ -626,7 +545,7 @@ Note: the Docker setup points the frontend at the API gateway on port `8000`, wh
 2. Open the frontend at `http://localhost:3000`.
 3. Use the sign-up flow to exercise Telegram verification and workspace creation.
 4. Sign in and verify protected dashboard access.
-5. Use gateway-authenticated requests as new services are added behind `/api/v1/*`.
+5. Use backend endpoints under `/api/v1/*` for feature development.
 
 ### Frontend state conventions
 
@@ -639,7 +558,7 @@ Note: the Docker setup points the frontend at the API gateway on port `8000`, wh
 
 - FastAPI for service interfaces
 - settings managed via `pydantic-settings`
-- SQLAlchemy async engine for Auth Service persistence
+- SQLAlchemy async engine for backend persistence
 - Redis async access for Telegram verification state
 
 ## Deployment Notes
@@ -649,7 +568,7 @@ The repository is currently optimized for Docker Compose-based local development
 - replace development defaults such as `JWT_SECRET_KEY=change-me`
 - provide real Telegram bot secrets through secure secret management
 - move from SQLite to PostgreSQL where applicable
-- configure TLS termination in front of the gateway
+- configure TLS termination in front of backend
 - restrict Telegram internal endpoints from public exposure
 - add persistence, backup, and migration workflows for database services
 - introduce proper observability, logging, and error tracking
@@ -659,14 +578,14 @@ The repository is currently optimized for Docker Compose-based local development
 ### What is solid today
 
 - auth and onboarding flow architecture is coherent end-to-end
-- gateway, auth service, Telegram service, Redis, and Postgres are wired together in Compose
+- backend and Redis are wired for local development
 - frontend module boundaries are already set up for further domain expansion
 - the repository already provides clear product direction for the next implementation phases
 
 ### What remains to be built
 
 - the majority of CRM domain modules remain specification-driven rather than runtime-complete
-- gateway routes for non-auth domains still return `501`
+- auth, telegram, employees, profile, vacations, and calendar are implemented in backend
 - dashboard data is currently mocked in the frontend
 - there is no implemented Projects, Calendar, Employees, Vacations, Messenger, Info Portal, or Profile backend yet
 
