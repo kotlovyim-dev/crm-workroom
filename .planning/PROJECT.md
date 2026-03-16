@@ -41,6 +41,7 @@ The repository already moved from microservices to a modular monolith backend (`
 - **Timeline**: v1 target is 2-3 months — requires strict scope control around project-first workflows
 - **Product scope**: Prioritize delivery workflows before broad communication/collaboration scope — protects time-to-value
 - **Architecture**: Maintain modular monolith boundaries — supports solo/small-team execution speed while preserving future extraction paths
+- **Design source of truth**: Always conform implemented UX and functional flows to `design/crm.pen` — keeps product behavior and UI aligned with intended platform scope
 
 ## Key Decisions
 
@@ -50,6 +51,7 @@ The repository already moved from microservices to a modular monolith backend (`
 | v1 is project-first for medium IT teams (30-200) | Fastest path to measurable delivery impact | — Pending |
 | Freemium with soft free limits and paid expansion | Lower adoption friction plus monetization path | — Pending |
 | Roles in v1: Admin/Owner, PM/Team Lead, Employee, HR | Covers core planning, execution, and workforce context needs | — Pending |
+| `design/crm.pen` is mandatory reference for UX/flow decisions | Prevents product drift and keeps implementation aligned with designed functionality | — Pending |
 
 ---
-*Last updated: 2026-03-17 after initialization*
+*Last updated: 2026-03-17 after initialization updates*
