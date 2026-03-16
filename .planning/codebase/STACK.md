@@ -14,6 +14,7 @@ CRM Workroom is a multi-service web application with a Next.js frontend, Python 
 - TypeScript `^5` in `web/package.json`.
 - State/data libs: `@tanstack/react-query`, `zustand`, `axios`, `react-hook-form`, `zod` in `web/package.json`.
 - Styling libs: `tailwindcss`, `class-variance-authority`, `tailwind-merge` in `web/package.json`.
+- UI System: `shadcn`.
 
 ## Backend Stack
 - FastAPI in all services:
