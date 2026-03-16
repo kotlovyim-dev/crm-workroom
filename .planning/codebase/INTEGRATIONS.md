@@ -1,42 +1,116 @@
-# Integrations
+# INTEGRATIONS
 
-## Integration Topology
-The system exposes backend APIs through Nginx and composes multiple internal services over HTTP and shared infrastructure services.
+## Integration Topology (Post-Migration)
 
-## Internal Service Integrations
-- API Gateway to Auth Service:
-  - Route `/api/v1/auth/` proxies to `auth-service:8080` (`services/api-gateway/nginx.conf`).
-- API Gateway to People Service:
-  - Route `/api/v1/people/` proxies to `people-service:8082` (`services/api-gateway/nginx.conf`).
-- Gateway auth validation hook:
-  - Internal location `/_validate_jwt` calls `auth-service:8080/api/v1/auth/validate-token` (`services/api-gateway/nginx.conf`).
-- Auth Service to Telegram Integration Service:
-  - `TELEGRAM_SERVICE_URL=http://telegram-integration-service:8081` in `docker-compose.yml`.
+- Core architecture is backend monolith + frontend client.
+- Telegram verification logic is integrated into backend feature modules, not a separate deployable service.
+- A retained internal HTTP boundary still exists inside the monolith:
+  - auth feature client in `backend/app/features/auth/telegram_client.py`
+  - telegram internal endpoints in `backend/app/features/telegram/routes.py`
+  - default base URL points back to same backend: `TELEGRAM_SERVICE_URL=http://localhost:8000/api/v1/telegram` (`backend/.env.example`)
 
-## Infrastructure Integrations
-- People Service to PostgreSQL:
-  - `DATABASE_URL=postgresql+asyncpg://...@people-postgres:5432/crm_people` in `docker-compose.yml` and `docker-compose.dev.yml`.
-- Telegram Integration Service to Redis:
-  - `REDIS_URL=redis://telegram-integration-redis:6379/...` in compose files.
+## Databases and State Stores
 
-## External Platform Integrations
-- Telegram Bot API integration via `aiogram` and bot runtime lifecycle in `services/telegram-integration-service/app/main.py`.
-- Webhook endpoint for Telegram updates at `/webhooks/telegram/{secret}` in `services/telegram-integration-service/app/main.py`.
+### PostgreSQL (Primary Persistence)
 
-## Auth and Session Integration Contract
-- Browser authenticates against Auth Service endpoints under `/api/v1/auth/*` (`services/auth-service/app/routers/auth.py`).
-- Auth endpoints set `access_token` and `refresh_token` cookies (`services/auth-service/app/routers/auth.py`).
-- Gateway injects `X-User-Id` and `X-Workspace-Id` headers after validation (`services/api-gateway/nginx.conf`).
-- People Service depends on auth headers through dependency layer (`services/people-service/app/routers/people/employees.py`).
+- Used by SQLAlchemy async engine in `backend/app/db/session.py`.
+- Configured through `database_url` setting in `backend/app/config/settings.py`.
+- Env key: `DATABASE_URL` (`backend/.env.example`).
+- Typical entities (auth domain) live in `backend/app/features/auth/models.py`.
 
-## Frontend Integration Patterns
-- Frontend Axios client uses `withCredentials: true` for cookie-based auth in `web/src/lib/api/client.ts`.
-- Frontend auto-refresh behavior calls `/api/v1/auth/refresh` on 401 errors in `web/src/lib/api/client.ts`.
-- Base API URL comes from `NEXT_PUBLIC_API_BASE_URL` (`web/src/lib/api/client.ts`, compose files).
+### Redis (Ephemeral Verification State)
 
-## Health and Operational Integrations
-- Gateway exposes per-service health proxy routes (`/health/auth`, `/health/people`, `/health/telegram`) in `services/api-gateway/nginx.conf`.
-- Compose healthchecks validate readiness for startup dependencies in `docker-compose.yml`.
+- Redis client is initialized at startup in `backend/app/features/telegram/runtime.py`.
+- Verification storage implementation in `backend/app/features/telegram/storage.py`.
+- Key namespaces:
+  - `tg_verify:intent:{short_token}`
+  - `tg_verify:phone:{phone_number}`
+  - `tg_verify:user:{telegram_user_id}`
+- TTL is controlled by `verification_ttl_seconds` / `VERIFICATION_TTL_SECONDS`.
+- Env key: `REDIS_URL`.
+- Local runtime from `docker-compose.yml` service `redis`.
 
-## Planned or Stubbed Integrations
-- Gateway includes routes for `projects-service`, `info-portal-service`, and `messenger-service` in `services/api-gateway/nginx.conf`, indicating planned services not present in this repo.
+## Telegram Integration
+
+### Telegram Bot API Boundary (External)
+
+- aiogram bot created from `TELEGRAM_BOT_TOKEN` in `backend/app/features/telegram/runtime.py`.
+- Runtime modes:
+  - `webhook` (default)
+  - `polling`
+- Mode selection via `TELEGRAM_DELIVERY_MODE` (`backend/app/config/settings.py`, `backend/.env.example`).
+
+### Telegram Webhook Boundary
+
+- Endpoint: `/api/v1/telegram/webhooks/telegram/{secret}` in `backend/app/features/telegram/routes.py`.
+- Secret validation against `TELEGRAM_WEBHOOK_SECRET`.
+- If bot token is absent, bot runtime remains disabled (`backend/app/features/telegram/runtime.py`).
+
+### Telegram Verification Flow (Internal)
+
+- Auth creates intent via HTTP POST to `/internal/verifications/intents` (`backend/app/features/auth/telegram_client.py`).
+- Auth checks code via HTTP POST to `/internal/verifications/check` (`backend/app/features/auth/telegram_client.py`).
+- Telegram bot deep-link and contact confirmation handled by:
+  - `backend/app/features/telegram/service.py`
+  - `backend/app/features/telegram/bot.py`
+- Verification code is generated and persisted in Redis-backed intent state.
+
+## Frontend <-> Backend Integration Boundary
+
+- Frontend API client in `web/src/lib/api/client.ts`.
+- Base URL env: `NEXT_PUBLIC_API_BASE_URL` (`web/.env.example`).
+- Cookies are sent cross-origin with `withCredentials: true`.
+- Backend CORS allows configured frontend origin (`frontend_url`) in `backend/app/main.py`.
+
+## Auth, Session, and Cookie Boundary
+
+- Access JWT creation/validation in `backend/app/features/auth/security.py`.
+- Refresh session rotation and revocation in `backend/app/features/auth/service.py`.
+- Cookie issuance and deletion in `backend/app/features/auth/routes.py`.
+- Cookie behavior depends on:
+  - `COOKIE_SECURE`
+  - `COOKIE_DOMAIN`
+  - `ACCESS_TOKEN_TTL_SECONDS`
+  - `REFRESH_TOKEN_TTL_SECONDS`
+
+## Environment Variable Contract
+
+Source of truth:
+- settings fields: `backend/app/config/settings.py`
+- sample values: `backend/.env.example`, `web/.env.example`
+
+### Backend env vars
+
+- `APP_ENV`
+- `DATABASE_URL`
+- `FRONTEND_URL`
+- `TELEGRAM_SERVICE_URL`
+- `JWT_SECRET_KEY`
+- `ACCESS_TOKEN_TTL_SECONDS`
+- `REFRESH_TOKEN_TTL_SECONDS`
+- `COOKIE_SECURE`
+- `COOKIE_DOMAIN`
+- `REDIS_URL`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_BOT_USERNAME`
+- `TELEGRAM_DELIVERY_MODE`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `VERIFICATION_TTL_SECONDS`
+
+### Frontend env vars
+
+- `NEXT_PUBLIC_API_BASE_URL`
+
+## External Service Boundaries Summary
+
+- PostgreSQL: external persistent DB accessed by SQLAlchemy async engine.
+- Redis: external in-memory store (containerized locally) for verification state.
+- Telegram Bot API: external third-party messaging platform via aiogram bot client.
+- Browser client: external caller to backend REST API (`/api/v1/*`) with cookie-based auth.
+
+## Migration Notes (Observed in Current Codebase)
+
+- Monolith backend is canonical runtime path (`backend/app/main.py`).
+- Redis remains as separate infrastructure dependency (`docker-compose.yml`).
+- Telegram integration service folder has been removed; equivalent behavior is represented by in-process feature modules under `backend/app/features/telegram/`.
+- Internal auth-to-telegram HTTP calls remain as a soft boundary and can be collapsed to direct Python service calls in a future cleanup.
