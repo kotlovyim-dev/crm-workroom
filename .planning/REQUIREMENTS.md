@@ -72,33 +72,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase TBD | Pending |
-| AUTH-02 | Phase TBD | Pending |
-| AUTH-03 | Phase TBD | Pending |
-| AUTH-04 | Phase TBD | Pending |
-| PROJ-01 | Phase TBD | Pending |
-| PROJ-02 | Phase TBD | Pending |
-| TASK-01 | Phase TBD | Pending |
-| TASK-02 | Phase TBD | Pending |
-| PROJ-03 | Phase TBD | Pending |
-| PROJ-04 | Phase TBD | Pending |
-| PROJ-05 | Phase TBD | Pending |
-| TIME-01 | Phase TBD | Pending |
-| WORK-01 | Phase TBD | Pending |
-| WORK-02 | Phase TBD | Pending |
-| VAC-01 | Phase TBD | Pending |
-| CAL-01 | Phase TBD | Pending |
-| CAL-02 | Phase TBD | Pending |
-| PLAN-01 | Phase TBD | Pending |
-| PLAN-02 | Phase TBD | Pending |
-| PLAN-03 | Phase TBD | Pending |
-| UX-01 | Phase TBD | Pending |
+| AUTH-01 | Phase 1 | Planned |
+| AUTH-02 | Phase 1 | Planned |
+| AUTH-03 | Phase 1 | Planned |
+| AUTH-04 | Phase 1 | Planned |
+| PROJ-01 | Phase 2 | Planned |
+| PROJ-02 | Phase 2 | Planned |
+| TASK-01 | Phase 3 | Planned |
+| TASK-02 | Phase 3 | Planned |
+| PROJ-03 | Phase 4 | Planned |
+| PROJ-04 | Phase 4 | Planned |
+| PROJ-05 | Phase 5 | Planned |
+| TIME-01 | Phase 6 | Planned |
+| WORK-01 | Phase 6 | Planned |
+| WORK-02 | Phase 6 | Planned |
+| VAC-01 | Phase 7 | Planned |
+| CAL-01 | Phase 7 | Planned |
+| CAL-02 | Phase 7 | Planned |
+| PLAN-01 | Phase 8 | Planned |
+| PLAN-02 | Phase 8 | Planned |
+| PLAN-03 | Phase 8 | Planned |
+| UX-01 | Phase 9 | Planned |
 
 **Coverage:**
 - v1 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after initial definition*
+*Last updated: 2026-03-17 after roadmap traceability mapping*
