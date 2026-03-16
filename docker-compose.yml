@@ -1,115 +1,17 @@
 services:
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
-    container_name: crm-web
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
-      PORT: 3000
-    depends_on:
-      auth-service:
-        condition: service_healthy
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-
-  api-gateway:
-    build:
-      context: ./services/api-gateway
-      dockerfile: Dockerfile
-    container_name: api-gateway
-    ports:
-      - "8000:8000"
-    depends_on:
-      auth-service:
-        condition: service_healthy
-      people-service:
-        condition: service_healthy
-    restart: unless-stopped
-
-  auth-service:
-    build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
-    container_name: auth-service
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8080"
-    env_file:
-      - ./services/auth-service/.env
-    environment:
-      APP_ENV: production
-      FRONTEND_URL: http://localhost:3000
-      TELEGRAM_SERVICE_URL: http://telegram-integration-service:8081
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me}
-      ACCESS_TOKEN_TTL_SECONDS: 900
-      REFRESH_TOKEN_TTL_SECONDS: 2592000
-      COOKIE_SECURE: "false"
-    depends_on:
-      telegram-integration-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  people-service:
-    build:
-      context: ./services/people-service
-      dockerfile: Dockerfile
-    container_name: people-service
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8082"
-    env_file:
-      - ./services/auth-service/.env
-    environment:
-      APP_ENV: production
-      FRONTEND_URL: http://localhost:3000
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  telegram-integration-service:
-    build:
-      context: ./services/telegram-integration-service
-      dockerfile: Dockerfile
-    container_name: telegram-integration-service
-    env_file:
-      - ./services/telegram-integration-service/.env
-    environment:
-      APP_ENV: production
-      REDIS_URL: redis://telegram-integration-redis:6379/0
-      VERIFICATION_TTL_SECONDS: 300
-    depends_on:
-      telegram-integration-redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "8081:8081"
-    restart: unless-stopped
-
-  telegram-integration-redis:
+  redis:
     image: redis:7-alpine
-    container_name: telegram-integration-redis
+    container_name: crm-redis
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
-    ports:
-      - "6379:6379"
     restart: unless-stopped
     volumes:
-      - telegram-redis-data:/data
+      - redis-data:/data
 
 volumes:
-  telegram-redis-data:
+  redis-data:

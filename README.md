@@ -29,11 +29,11 @@
 
 ## Overview
 
-CRM Workroom is a microservice-oriented internal workspace platform designed around a broad CRM and team-operations product surface. The repository already contains a working authentication stack, Telegram-based phone verification, a protected dashboard shell, and the initial Next.js frontend structure. It also captures the broader intended product surface across the remaining CRM domains.
+CRM Workroom is an internal workspace platform designed around a broad CRM and team-operations product surface. The repository currently uses a modular monolith backend with a working authentication stack, Telegram-based phone verification, a protected dashboard shell, and the initial Next.js frontend structure. It also captures the broader intended product surface across the remaining CRM domains.
 
 The project combines three sources of truth:
 
-- running code in `web/`, `services/auth-service/`, `services/telegram-integration-service/`, and `services/api-gateway/`
+- running code in `web/`, `backend/`, and `services/api-gateway/`
 
 This README documents both the current implementation and the intended product scope, clearly separating what is already shipped in this repository from what is planned for future implementation.
 
@@ -48,19 +48,19 @@ This README documents both the current implementation and the intended product s
   - protected dashboard layout
   - dashboard overview widgets
   - nearest events page
-- FastAPI Auth Service with:
+- FastAPI backend auth feature with:
   - email/password login
   - workspace registration
   - Telegram verification initialization and check flow
   - access token and refresh token cookie sessions
   - session refresh, logout, and session lookup
   - JWT validation endpoint for gateway auth checks
-- Telegram Integration Service with:
+- FastAPI backend telegram feature with:
   - verification intent creation
   - Redis-backed verification session storage
   - Telegram webhook or polling runtime
   - contact-share validation flow and verification code checking
-- Nginx API Gateway with:
+- Nginx API Gateway (optional legacy) with:
   - reverse proxying
   - auth validation hook for protected routes
   - rate limiting
