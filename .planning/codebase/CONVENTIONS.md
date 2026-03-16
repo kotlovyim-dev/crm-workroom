@@ -1,7 +1,3 @@
-# Coding Conventions Analysis
-
-Scope: `/home/maksym/projects/crm-workroom` (backend + web).
-
 ## Architecture And Module Layout
 
 - Backend follows a feature-first FastAPI structure under `backend/app/features/*` with per-feature `routes.py` + `services.py` (+ optional `schemas.py` / runtime helpers).

@@ -448,9 +448,6 @@ Internal:
 
 ```text
 crm-workroom/
-├── design/
-│   ├── auth.pen
-│   └── extract_pen.mjs
 ├── backend/
 │   └── app/
 ├── web/
@@ -460,7 +457,6 @@ crm-workroom/
 │   ├── src/lib/
 │   └── src/modules/
 ├── docker-compose.yml
-└── docker-compose.yml
 ```
 
 ## Getting Started
