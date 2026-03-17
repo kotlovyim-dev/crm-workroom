@@ -9,9 +9,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { MessageCircleIcon } from "lucide-react";
 import { SupportModal } from "@/modules/dashboard/components/ui/support-modal";
+import { useSessionQuery } from "@/modules/auth/api/auth";
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { data } = useSessionQuery();
+    const role = data?.user?.role_description;
+    const visibleNavItems = NAV_ITEMS.filter((item) => {
+        if (!item.requiredRoles || !role) {
+            return true;
+        }
+
+        return item.requiredRoles.includes(role);
+    });
 
     return (
         <nav>
@@ -19,7 +29,7 @@ export function Sidebar() {
                 <Image src="/logo.svg" alt="Logo" width={50} height={50} />
                 <div className="flex flex-col justify-between h-full">
                     <div className="flex flex-col gap-2 w-full">
-                        {NAV_ITEMS.map((item) => (
+                        {visibleNavItems.map((item) => (
                             <Link
                                 key={item.label}
                                 href={item.href}

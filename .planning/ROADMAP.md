@@ -10,12 +10,12 @@
 **Goal:** Stabilize workspace onboarding/auth/session and role policy enforcement as the foundation for all project workflows.
 
 **Mapped REQ IDs:** AUTH-01, AUTH-02, AUTH-03, AUTH-04
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 01-01-PLAN.md - Stabilize auth/session core and canonical role contract with integration tests.
-- [ ] 01-02-PLAN.md - Implement full invitation lifecycle with role assignment and transfer semantics.
-- [ ] 01-03-PLAN.md - Deliver trust-boundary frontend UX (role-hidden nav, forbidden and invite/session edge states).
+- [x] 01-01-PLAN.md - Stabilize auth/session core and canonical role contract with integration tests.
+- [x] 01-02-PLAN.md - Implement full invitation lifecycle with role assignment and transfer semantics.
+- [x] 01-03-PLAN.md - Deliver trust-boundary frontend UX (role-hidden nav, forbidden and invite/session edge states).
 
 **Observable success criteria:**
 - Signup/login and refresh-session flows pass end-to-end tests for valid and invalid credential paths.

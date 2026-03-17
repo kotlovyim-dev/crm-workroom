@@ -7,10 +7,10 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign up and log in with email/password in a workspace context.
-- [ ] **AUTH-02**: User can keep authenticated session via refresh flow across browser refresh.
-- [ ] **AUTH-03**: Workspace Admin/Owner can invite users into workspace.
-- [ ] **AUTH-04**: Role-based policies are enforced for Admin/Owner, PM/Team Lead, Employee, and HR.
+- [x] **AUTH-01**: User can sign up and log in with email/password in a workspace context.
+- [x] **AUTH-02**: User can keep authenticated session via refresh flow across browser refresh.
+- [x] **AUTH-03**: Workspace Admin/Owner can invite users into workspace.
+- [x] **AUTH-04**: Role-based policies are enforced for Admin/Owner, PM/Team Lead, Employee, and HR.
 
 ### Projects and Tasks
 
@@ -72,10 +72,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Planned |
-| AUTH-02 | Phase 1 | Planned |
-| AUTH-03 | Phase 1 | Planned |
-| AUTH-04 | Phase 1 | Planned |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | PROJ-01 | Phase 2 | Planned |
 | PROJ-02 | Phase 2 | Planned |
 | TASK-01 | Phase 3 | Planned |

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import select
@@ -8,9 +9,17 @@ from app.config.settings import Settings
 from app.features.auth.models import Invitation, RefreshSession, User, Workspace
 from app.features.auth.schemas import (
     AuthResponse,
+    InvitationAcceptRequest,
+    InvitationCreateRequest,
+    InvitationListResponse,
+    InvitationResponse,
+    InvitationTokenResponse,
+    InvitationUpdateRoleRequest,
     InitTelegramVerificationRequest,
     InitTelegramVerificationResponse,
+    INVITER_ROLES,
     LoginRequest,
+    RoleDescription,
     RegisterWorkspaceRequest,
     SessionResponse,
     TelegramIntentRequest,
@@ -22,7 +31,9 @@ from app.features.auth.schemas import (
 )
 from app.features.auth.security import (
     create_access_token,
+    create_invite_token,
     create_refresh_token,
+    hash_invite_token,
     hash_password,
     hash_refresh_token,
     normalize_phone,
@@ -109,7 +120,7 @@ class AuthService:
             email=normalized_email,
             hashed_password=hash_password(payload.password),
             phone_number=normalized_phone,
-            role_description=payload.role_description,
+            role_description=RoleDescription.ADMIN_OWNER,
             is_verified=True,
             last_login=datetime.now(UTC),
         )
@@ -205,8 +216,154 @@ class AuthService:
         if refresh_session.user_id != user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session is invalid")
 
+    async def create_invitation(
+        self,
+        session: AsyncSession,
+        actor: User,
+        payload: InvitationCreateRequest,
+    ) -> InvitationTokenResponse:
+        self._ensure_inviter_role(actor.role_description)
+        invite_email = payload.email.lower()
+
+        duplicate_user = await session.scalar(
+            select(User).where(User.workspace_id == actor.workspace_id, User.email == invite_email)
+        )
+        if duplicate_user is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already in workspace")
+
+        duplicate_invite = await session.scalar(
+            select(Invitation).where(
+                Invitation.workspace_id == actor.workspace_id,
+                Invitation.email == invite_email,
+                Invitation.status == "pending",
+                Invitation.revoked_at.is_(None),
+            )
+        )
+        if duplicate_invite is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Pending invitation already exists")
+
+        token = create_invite_token()
+        invitation = Invitation(
+            workspace_id=actor.workspace_id,
+            email=invite_email,
+            invited_by_user_id=actor.id,
+            role_description=payload.role_description,
+            token_hash=hash_invite_token(token),
+            status="pending",
+            expires_at=datetime.now(UTC) + timedelta(days=7),
+        )
+        session.add(invitation)
+        await session.commit()
+        await session.refresh(invitation)
+        return InvitationTokenResponse(invitation=self._map_invitation(invitation), token=token)
+
+    async def list_invitations(self, session: AsyncSession, actor: User) -> InvitationListResponse:
+        self._ensure_inviter_role(actor.role_description)
+        items = await session.scalars(
+            select(Invitation)
+            .where(Invitation.workspace_id == actor.workspace_id)
+            .order_by(Invitation.created_at.desc())
+        )
+        return InvitationListResponse(items=[self._map_invitation(item) for item in items.all()])
+
+    async def resend_invitation(
+        self,
+        session: AsyncSession,
+        actor: User,
+        invitation_id: str,
+    ) -> InvitationTokenResponse:
+        self._ensure_inviter_role(actor.role_description)
+        invitation = await self._get_workspace_invitation(session, actor.workspace_id, invitation_id)
+        self._assert_pending_invitation(invitation)
+        token = create_invite_token()
+        invitation.token_hash = hash_invite_token(token)
+        invitation.resent_at = datetime.now(UTC)
+        invitation.expires_at = datetime.now(UTC) + timedelta(days=7)
+        await session.commit()
+        await session.refresh(invitation)
+        return InvitationTokenResponse(invitation=self._map_invitation(invitation), token=token)
+
+    async def revoke_invitation(self, session: AsyncSession, actor: User, invitation_id: str) -> None:
+        self._ensure_inviter_role(actor.role_description)
+        invitation = await self._get_workspace_invitation(session, actor.workspace_id, invitation_id)
+        self._assert_pending_invitation(invitation)
+        invitation.status = "revoked"
+        invitation.revoked_at = datetime.now(UTC)
+        await session.commit()
+
+    async def update_invitation_role(
+        self,
+        session: AsyncSession,
+        actor: User,
+        invitation_id: str,
+        payload: InvitationUpdateRoleRequest,
+    ) -> InvitationResponse:
+        self._ensure_inviter_role(actor.role_description)
+        invitation = await self._get_workspace_invitation(session, actor.workspace_id, invitation_id)
+        self._assert_pending_invitation(invitation)
+        invitation.role_description = payload.role_description
+        await session.commit()
+        await session.refresh(invitation)
+        return self._map_invitation(invitation)
+
+    async def accept_invitation(
+        self,
+        session: AsyncSession,
+        payload: InvitationAcceptRequest,
+    ) -> AuthResponse:
+        invitation = await session.scalar(
+            select(Invitation).where(Invitation.token_hash == hash_invite_token(payload.token))
+        )
+        if invitation is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+
+        self._assert_pending_invitation(invitation)
+
+        if self._is_expired(invitation.expires_at):
+            invitation.status = "expired"
+            await session.commit()
+            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation expired")
+
+        existing_user = await session.scalar(select(User).where(User.email == invitation.email))
+        if existing_user is not None and existing_user.workspace_id == invitation.workspace_id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already in workspace")
+
+        if existing_user is not None and existing_user.workspace_id != invitation.workspace_id:
+            if not payload.transfer_confirmed:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Transfer confirmation required",
+                )
+            existing_user.workspace_id = invitation.workspace_id
+            existing_user.role_description = invitation.role_description
+            existing_user.last_login = datetime.now(UTC)
+            target_user = existing_user
+        else:
+            target_user = User(
+                workspace_id=invitation.workspace_id,
+                email=invitation.email,
+                hashed_password=hash_password(create_invite_token()),
+                phone_number=self._generate_invited_phone(),
+                role_description=invitation.role_description,
+                is_verified=True,
+                last_login=datetime.now(UTC),
+            )
+            session.add(target_user)
+
+        invitation.status = "accepted"
+        invitation.accepted_at = datetime.now(UTC)
+        await session.commit()
+        await session.refresh(target_user)
+        await session.refresh(target_user, attribute_names=["workspace"])
+        return self._build_auth_response(target_user)
+
     def build_access_token(self, user: User) -> str:
-        return create_access_token(settings=self._settings, subject=user.id, workspace_id=user.workspace_id)
+        return create_access_token(
+            settings=self._settings,
+            subject=user.id,
+            workspace_id=user.workspace_id,
+            role=user.role_description,
+        )
 
     def cookie_settings(self) -> dict[str, object]:
         return {
@@ -224,7 +381,7 @@ class AuthService:
                 id=user.id,
                 email=user.email,
                 phone_number=user.phone_number,
-                role_description=user.role_description,
+                role_description=self._canonical_role(user.role_description),
                 is_verified=user.is_verified,
                 workspace_id=user.workspace_id,
             ),
@@ -245,10 +402,65 @@ class AuthService:
                 workspace_id=workspace_id,
                 email=email,
                 invited_by_user_id=user_id,
+                role_description=RoleDescription.TEAM_MEMBER,
+                token_hash=hash_invite_token(create_invite_token()),
                 status="pending",
+                expires_at=datetime.now(UTC) + timedelta(days=7),
             )
             for email in sorted(unique_emails)
         ]
+
+    def _map_invitation(self, invitation: Invitation) -> InvitationResponse:
+        return InvitationResponse(
+            id=invitation.id,
+            workspace_id=invitation.workspace_id,
+            email=invitation.email,
+            invited_by_user_id=invitation.invited_by_user_id,
+            role_description=RoleDescription(invitation.role_description),
+            status=invitation.status,
+            expires_at=invitation.expires_at,
+            accepted_at=invitation.accepted_at,
+            revoked_at=invitation.revoked_at,
+            created_at=invitation.created_at,
+        )
+
+    def _ensure_inviter_role(self, role: str) -> None:
+        if role not in {value.value for value in INVITER_ROLES}:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    def _canonical_role(self, role: str) -> RoleDescription:
+        try:
+            return RoleDescription(role)
+        except ValueError:
+            return RoleDescription.TEAM_MEMBER
+
+    async def _get_workspace_invitation(
+        self,
+        session: AsyncSession,
+        workspace_id: str,
+        invitation_id: str,
+    ) -> Invitation:
+        invitation = await session.scalar(
+            select(Invitation).where(
+                Invitation.id == invitation_id,
+                Invitation.workspace_id == workspace_id,
+            )
+        )
+        if invitation is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+        return invitation
+
+    def _assert_pending_invitation(self, invitation: Invitation) -> None:
+        if invitation.status != "pending" or invitation.revoked_at is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation is not pending")
+
+    def _generate_invited_phone(self) -> str:
+        digits = "".join(char for char in uuid4().hex if char.isdigit())
+        return f"+1{(digits + '0' * 11)[:11]}"
+
+    def _is_expired(self, value: datetime) -> bool:
+        check = value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+        return check < datetime.now(UTC)
 
     def _build_intent_request(self, phone_number: str) -> TelegramIntentRequest:
         return TelegramIntentRequest(phone_number=normalize_phone(phone_number))
@@ -276,7 +488,7 @@ class AuthService:
         if refresh_session is None or refresh_session.revoked_at is not None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh session is invalid")
 
-        if refresh_session.expires_at < datetime.now(UTC):
+        if self._is_expired(refresh_session.expires_at):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh session expired")
 
         return refresh_session

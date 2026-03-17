@@ -19,7 +19,7 @@ export function SessionGuard({ children }: SessionGuardProps) {
         }
 
         if (isError || !data?.authenticated) {
-            router.replace("/login")
+            router.replace("/login?reason=session-expired")
         }
     }, [data?.authenticated, isError, isLoading, router])
 

@@ -8,11 +8,13 @@ import {
     PlaneIcon,
     UsersIcon,
 } from "lucide-react";
+import type { CanonicalRole } from "@/modules/auth/types/auth";
 
 interface NavItem {
     label: string;
     href: string;
     icon?: LucideIcon;
+    requiredRoles?: CanonicalRole[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -40,6 +42,7 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Employees",
         href: "/employees",
         icon: UsersIcon,
+        requiredRoles: ["Admin/Owner", "PM/Team Lead"],
     },
     {
         label: "Messanger",

@@ -50,7 +50,13 @@ class Invitation(Base):
     workspace_id: Mapped[str] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"))
     email: Mapped[str] = mapped_column(String(320), index=True)
     invited_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    role_description: Mapped[str] = mapped_column(String(64), default="Team Member")
+    token_hash: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     status: Mapped[str] = mapped_column(String(32), default="pending")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     workspace: Mapped[Workspace] = relationship(back_populates="invitations")

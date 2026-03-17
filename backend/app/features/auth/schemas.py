@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
@@ -14,6 +15,15 @@ TeamSize = Literal[
     "51 - 100",
     "101 - 500",
 ]
+
+
+class RoleDescription(StrEnum):
+    ADMIN_OWNER = "Admin/Owner"
+    PM_TEAM_LEAD = "PM/Team Lead"
+    TEAM_MEMBER = "Team Member"
+
+
+INVITER_ROLES: set[RoleDescription] = {RoleDescription.ADMIN_OWNER, RoleDescription.PM_TEAM_LEAD}
 
 
 class LoginRequest(BaseModel):
@@ -48,7 +58,7 @@ class RegisterWorkspaceRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     usage_purpose: str = Field(min_length=1, max_length=255)
-    role_description: str = Field(min_length=1, max_length=255)
+    role_description: RoleDescription = RoleDescription.ADMIN_OWNER
     additional_boolean_question: bool
     company_name: str = Field(min_length=2, max_length=255)
     team_size: TeamSize
@@ -69,7 +79,7 @@ class UserResponse(BaseModel):
     id: str
     email: EmailStr
     phone_number: str
-    role_description: str
+    role_description: RoleDescription
     is_verified: bool
     workspace_id: str
 
@@ -107,3 +117,39 @@ class TelegramCheckResponse(BaseModel):
     verified: bool
     status: str
     expires_at: datetime | None = None
+
+
+class InvitationCreateRequest(BaseModel):
+    email: EmailStr
+    role_description: RoleDescription
+
+
+class InvitationUpdateRoleRequest(BaseModel):
+    role_description: RoleDescription
+
+
+class InvitationAcceptRequest(BaseModel):
+    token: str = Field(min_length=16)
+    transfer_confirmed: bool = False
+
+
+class InvitationResponse(BaseModel):
+    id: str
+    workspace_id: str
+    email: EmailStr
+    invited_by_user_id: str
+    role_description: RoleDescription
+    status: str
+    expires_at: datetime
+    accepted_at: datetime | None
+    revoked_at: datetime | None
+    created_at: datetime
+
+
+class InvitationTokenResponse(BaseModel):
+    invitation: InvitationResponse
+    token: str
+
+
+class InvitationListResponse(BaseModel):
+    items: list[InvitationResponse]

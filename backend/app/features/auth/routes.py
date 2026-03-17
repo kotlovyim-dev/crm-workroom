@@ -8,6 +8,12 @@ from app.db.session import get_db_session
 from app.features.auth.models import User
 from app.features.auth.schemas import (
     AuthResponse,
+    InvitationAcceptRequest,
+    InvitationCreateRequest,
+    InvitationListResponse,
+    InvitationResponse,
+    InvitationTokenResponse,
+    InvitationUpdateRoleRequest,
     InitTelegramVerificationRequest,
     InitTelegramVerificationResponse,
     LoginRequest,
@@ -28,6 +34,7 @@ settings = get_settings()
 class AuthContext:
     user_id: str
     workspace_id: str
+    role: str
 
 
 def get_auth_service(settings_: Settings = Depends(get_settings)) -> AuthService:
@@ -51,16 +58,27 @@ async def get_current_auth_context(
 
     user_id = payload.get("sub")
     workspace_id = payload.get("workspace_id")
+    role = payload.get("role")
     if not user_id or not workspace_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
 
+    if not role:
+        user = await session.get(User, str(user_id))
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
+        role = user.role_description
+
     await auth_service.validate_active_session(session, refresh_token, user_id)
 
-    return AuthContext(user_id=str(user_id), workspace_id=str(workspace_id))
+    return AuthContext(user_id=str(user_id), workspace_id=str(workspace_id), role=str(role))
 
 
 async def get_current_user_id(auth_context: AuthContext = Depends(get_current_auth_context)) -> str:
     return auth_context.user_id
+
+
+async def get_current_user(auth_context: AuthContext = Depends(get_current_auth_context)) -> AuthContext:
+    return auth_context
 
 
 def set_auth_cookies(response: Response, auth_service: AuthService, access_token: str, refresh_token: str) -> None:
@@ -197,5 +215,90 @@ async def validate_token(
     """
     response.headers["X-User-Id"] = auth_context.user_id
     response.headers["X-Workspace-Id"] = auth_context.workspace_id
+    response.headers["X-User-Role"] = auth_context.role
     return {"status": "ok"}
+
+
+@router.post("/invitations", response_model=InvitationTokenResponse, status_code=status.HTTP_201_CREATED)
+async def create_invitation(
+    payload: InvitationCreateRequest,
+    session: AsyncSession = Depends(get_db_session),
+    auth_context: AuthContext = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> InvitationTokenResponse:
+    actor = await session.get(User, auth_context.user_id)
+    if actor is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    return await auth_service.create_invitation(session, actor, payload)
+
+
+@router.get("/invitations", response_model=InvitationListResponse)
+async def list_invitations(
+    session: AsyncSession = Depends(get_db_session),
+    auth_context: AuthContext = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> InvitationListResponse:
+    actor = await session.get(User, auth_context.user_id)
+    if actor is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    return await auth_service.list_invitations(session, actor)
+
+
+@router.post("/invitations/{invitation_id}/resend", response_model=InvitationTokenResponse)
+async def resend_invitation(
+    invitation_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    auth_context: AuthContext = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> InvitationTokenResponse:
+    actor = await session.get(User, auth_context.user_id)
+    if actor is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    return await auth_service.resend_invitation(session, actor, invitation_id)
+
+
+@router.patch("/invitations/{invitation_id}", response_model=InvitationResponse)
+async def update_invitation_role(
+    invitation_id: str,
+    payload: InvitationUpdateRoleRequest,
+    session: AsyncSession = Depends(get_db_session),
+    auth_context: AuthContext = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> InvitationResponse:
+    actor = await session.get(User, auth_context.user_id)
+    if actor is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    return await auth_service.update_invitation_role(session, actor, invitation_id, payload)
+
+
+@router.delete("/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_invitation(
+    invitation_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    auth_context: AuthContext = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> Response:
+    actor = await session.get(User, auth_context.user_id)
+    if actor is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    await auth_service.revoke_invitation(session, actor, invitation_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/invitations/accept", response_model=AuthResponse)
+async def accept_invitation(
+    payload: InvitationAcceptRequest,
+    response: Response,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> AuthResponse:
+    auth_response = await auth_service.accept_invitation(session, payload)
+    user_record = await session.get(User, auth_response.user.id)
+    if user_record is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
+    refresh_token = await auth_service.create_refresh_session(session, user_record, request)
+    access_token = auth_service.build_access_token(user_record)
+    set_auth_cookies(response, auth_service, access_token, refresh_token)
+    return auth_response
 

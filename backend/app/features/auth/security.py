@@ -37,11 +37,12 @@ def verify_password(password: str, hashed_password: str) -> bool:
     return hmac.compare_digest(actual_hash, expected_hash)
 
 
-def create_access_token(*, settings: Settings, subject: str, workspace_id: str) -> str:
+def create_access_token(*, settings: Settings, subject: str, workspace_id: str, role: str) -> str:
     expires_at = datetime.now(UTC) + timedelta(seconds=settings.access_token_ttl_seconds)
     payload: dict[str, Any] = {
         "sub": subject,
         "workspace_id": workspace_id,
+        "role": role,
         "type": "access",
         "exp": expires_at,
         "iat": datetime.now(UTC),
@@ -59,4 +60,12 @@ def create_refresh_token(*, remember_me: bool = True) -> str:
 
 
 def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_invite_token() -> str:
+    return f"inv.{secrets.token_urlsafe(32)}"
+
+
+def hash_invite_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
